@@ -1,0 +1,11 @@
+// M0 baseline. Domain models are introduced by M1 (identity) and M2 (RBAC/audit).
+// Module-owned models join this shared schema in M4 and must use a module prefix.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

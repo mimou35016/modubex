@@ -3,17 +3,17 @@
 Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` update with every milestone (definition of done).
 
 ## M0 — Foundation & quality baseline
-**Exit:** fresh clone → running, branded app; gates wired.
+**Exit:** fresh clone → running, branded app; gates wired. **Status: complete.**
 
-- M0.1 Pin dependencies and commit `package-lock.json` (none exists today).
-- M0.2 Add scripts: `typecheck`, `test`, `format`, `lint:fix`, `i18n:check`, `db:migrate`, `db:seed`.
-- M0.3 CI workflow: typecheck → lint → test → build, in that order.
-- M0.4 Prisma + PostgreSQL wiring, versioned migrations, repeatable seed script.
-- M0.5 Define folder conventions for core, `src/modules/*`, and shared UI.
-- M0.6 shadcn/ui (`vega`) base components + app shell (sidebar, header, breadcrumbs).
-- M0.7 Locale registry and theme plumbing (`light`/`dark`/`system`).
-- M0.8 Structured server logs and error pages.
-- M0.9 Replace stale stock README with real setup steps; add `.env.example`.
+- [x] M0.1 Pin dependencies and commit `package-lock.json`.
+- [x] M0.2 Add scripts: `typecheck`, `test`, `format`, `lint:fix`, `i18n:check`, `db:migrate`, `db:seed`.
+- [x] M0.3 CI workflow: typecheck → lint → test → i18n:check → build, in that order.
+- [x] M0.4 Prisma + PostgreSQL wiring, versioned migrations, repeatable seed script.
+- [x] M0.5 Define folder conventions for core, `src/modules/*`, and shared UI.
+- [x] M0.6 shadcn/ui (`vega`) base components + app shell (sidebar, header, breadcrumbs).
+- [x] M0.7 Locale registry and theme plumbing (`light`/`dark`/`system`).
+- [x] M0.8 Structured server logs and error pages.
+- [x] M0.9 Replace stale stock README with real setup steps; add `.env.example`.
 
 ## M1 — Identity & sessions
 **Exit:** AC1 — seeded Owner, working sign-in.

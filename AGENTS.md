@@ -1,41 +1,47 @@
 # AGENTS.md
 
-## Read this first: scaffold vs. spec
-
-- This repo is currently a bare `create-next-app` scaffold, **not** the product in `docs/PRD.md`. The PRD is the target spec, not a description of existing code.
-- `package.json` has only `dev`, `build`, `start`, `lint`. There is **no test runner, typecheck/CI config, Prisma, auth, i18n, module system, lockfile, or developer/user guide yet**. Check `package.json` before assuming PRD tooling exists.
-- `README.md` is stock boilerplate and stale: it says edit `app/page.tsx`; the real source is `src/app/`.
+## Current state
+- M0 (foundation and quality baseline) is implemented. The app shell, CI, lockfile, Prisma baseline, locale registry, and theming exist; auth, RBAC, modules, settings, entitlements, and dashboard pages do **not** exist yet.
+- `docs/PRD.md` is the target spec, not a description of current code. `docs/tasks.md` is the milestone plan. If a rule conflicts with executable config, trust the config.
+- `package.json` is the source of truth for available tooling. Do not invent `npm test`-style commands without adding them there.
 
 ## Commands
-
 - `npm run dev` → http://localhost:3000
 - `npm run build` / `npm run start` — production build / serve
-- `npm run lint` — `eslint` (flat config, ESLint 9)
-- Typecheck has no script: run `npx tsc --noEmit` (`tsconfig.json` already sets `strict: true`, `noEmit: true`).
-- No formatter/test/typecheck scripts or CI exist. Add them to `package.json` if you introduce them; do not assume `npm test` works.
+- `npm run typecheck`, `npm run lint` (`lint:fix`), `npm run format` (`format:check`), `npm run test` (`test:watch`)
+- `npm run i18n:check` — core message parity fails CI; module parity warns only
+- `npm run db:generate`, `npm run db:migrate`, `npm run db:deploy`, `npm run db:seed`
+- CI order: `typecheck → lint → test → i18n:check → build`. Run it before a PR.
 
 ## Layout & toolchain quirks
-
-- App Router entrypoints: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`. Alias `@/*` → `./src/*` (`tsconfig.json`).
-- Tailwind 4 is CSS-first: styles live in `globals.css` (`@import "tailwindcss"`, `@theme inline`). There is no `tailwind.config.*` or `postcss.config.*`. `next.config.ts` maps `*.css` to the `@tailwindcss/turbopack` loader — preserve that rule when touching CSS handling.
-- Next 16 typed routes: `next-env.d.ts` imports `.next/types/routes.d.ts`; `layout.tsx` uses `LayoutProps<"/">`. Use the generated `LayoutProps<...>` / page prop types instead of hand-writing `children` types.
-- `.env*` is gitignored; secrets belong in environment variables, never committed.
+- App Router entrypoints: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`. Alias `@/*` → `./src/*`.
+- Tailwind 4 is CSS-first: styles live in `globals.css`; there is no `tailwind.config.*` or `postcss.config.*`. `next.config.ts` maps `*.css` to `@tailwindcss/turbopack` — preserve it, and keep the `next-intl` plugin wrapper.
+- Next 16 generates `LayoutProps<...>` types only after `next dev`/`build`. CI typechecks before building, so layouts use explicit props instead of `LayoutProps` — don't reintroduce it without changing CI order.
+- Locale is a `NEXT_LOCALE` cookie read in `src/i18n/request.ts` and the root layout (`lang`/`dir`). `ar` is RTL. Theme uses `next-themes` with `class` on `<html>`.
+- `.env*` is gitignored; infrastructure values are env-only and read-only in the UI.
 
 ## PRD rules that constrain implementation
-
-Treat these as requirements to build toward, not current state. If a rule conflicts with executable config, trust the config.
-
-- **Server-enforced security:** every route, server action, and API handler checks permissions (not role names) and entitlements on the server. Better Auth owns identity/sessions; RBAC, licensing, and audit are our own code/schema. Zod-validate all inputs, settings, and manifests; no `any` in core.
-- **Modules:** `src/modules/*`, bundled at build time. Installing is a DB state change; no runtime code loading. Manifests declare permissions, zod settings schema, Prisma models/migrations, message files, plan tier, dependencies, and a cleanup hook.
-- **Single entitlement seam:** all checks go through `getEntitlements()`; plan→entitlement mapping defined once.
-- **Adapters over vendors:** `sendMail()` (SMTP default) and storage `put/get/delete` (local disk default, S3-compatible option). Surface and log failures; never silently swallow them.
-- **Settings split:** runtime settings in DB (UI-editable, zod-validated, audit-logged, live effect); infrastructure values in env vars shown read-only in UI.
-- **i18n:** `en`, `fr`, `ar` with RTL; centralized locale registry. Core keys missing in `fr`/`ar` fail CI; module keys only warn. Runtime falls back to `en`.
-- **Audit:** append-only via `audit.log()`; sign-ins, role/user/module/settings/license changes, exports, and retention purges; before/after values stored.
-- **RBAC guards:** Owner/Admin system roles are locked; the last Owner cannot be removed or demoted.
-- **Zero fake UI:** every interactive element has a real handler and persisted effect. `docs/` updates are part of the definition of done.
-- **Tenancy:** single-tenant by default, but keep data model, RBAC, settings, and licensing workspace-scope-ready.
+- **Server-enforced security:** every route, server action, and API handler checks permissions (not role names) and entitlements. Better Auth owns identity/sessions; RBAC, licensing, and audit are ours. Zod-validate all inputs, settings, and manifests; no `any` in core.
+- **Modules:** `src/modules/*`, bundled at build time. Install is a DB state change; no runtime code loading. Manifests declare permissions, zod settings schema, Prisma models/migrations, messages, plan tier, dependencies, cleanup hook. Use module prefixes for shared-schema models.
+- **Single entitlement seam:** all checks go through `getEntitlements()`.
+- **Adapters over vendors:** `sendMail()` (SMTP default) and storage `put/get/delete` (local disk default, S3 option); log failures.
+- **Settings split:** runtime settings in DB (zod, live invalidation, audited); infrastructure values env-only and read-only in UI.
+- **i18n:** `en`/`fr`/`ar` with RTL, runtime fallback to `en`; core keys fail CI, module keys warn.
+- **Audit:** append-only via `audit.log()`, before/after values, sign-ins, role/user/module/settings/license changes, exports, retention purges.
+- **RBAC guards:** Owner/Admin system roles locked; last Owner cannot be removed or demoted.
+- **Zero fake UI:** every interactive element has a real handler and persisted effect. Docs in `docs/` are part of the definition of done.
+- **Tenancy:** single-tenant default, but workspace-scope-ready.
 
 ## References
+- `docs/PRD.md` — spec of record (v1 scope, data model, acceptance criteria)
+- `docs/tasks.md` — milestone and task plan
 
-- `docs/PRD.md` — spec of record (v1 scope, data model, acceptance criteria).
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

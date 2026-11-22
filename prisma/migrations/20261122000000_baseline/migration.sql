@@ -1,0 +1,2 @@
+-- M0 baseline: no domain tables yet.
+-- Identity tables arrive in M1, RBAC and audit tables in M2.

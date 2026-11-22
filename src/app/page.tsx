@@ -1,69 +1,80 @@
-import Image from "next/image";
+import { getTranslations } from "next-intl/server";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getFoundationReadiness } from "@/core/foundation/readiness";
+import { cn } from "@/lib/utils";
 
-export default function Home() {
+export default async function Home() {
+  const t = await getTranslations("overview");
+  const { checks, milestones, currentMilestone, version } = getFoundationReadiness();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+    <div className="mx-auto max-w-5xl">
+      <section className="border-b pb-8">
+        <div
+          className="flex items-center gap-1.5"
+          aria-label={`Milestone ${currentMilestone} of ${milestones.length - 1}`}
+        >
+          {milestones.map((milestone) => (
+            <span
+              key={milestone}
+              title={milestone}
+              className={cn(
+                "h-1.5 w-8 rounded-full",
+                milestone === currentMilestone ? "bg-accent" : "bg-border",
+              )}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
+        <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          {t("title")}
+        </h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-muted">{t("subtitle")}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <Badge tone="accent">{currentMilestone}</Badge>
+          <Badge>
+            {t("version")} {version}
+          </Badge>
+          <Badge>
+            {t("environment")} {process.env.NODE_ENV}
+          </Badge>
+        </div>
+      </section>
+
+      <Card className="mt-10 overflow-hidden">
+        <CardHeader className="border-b">
+          <CardTitle>{t("readinessTitle")}</CardTitle>
+          <p className="text-xs text-muted">{t("readinessHint")}</p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ul>
+            {checks.map((check) => (
+              <li
+                key={check.id}
+                className="flex items-center justify-between gap-4 border-b px-6 py-4 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{t(`checks.${check.id}`)}</p>
+                  <p className="truncate font-mono text-[11px] text-muted">{check.detail}</p>
+                </div>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[11px]",
+                    check.ready ? "bg-accent-soft text-accent" : "bg-accent-soft/60 text-muted",
+                  )}
+                >
+                  {check.ready ? t("states.ready") : t("states.pending")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <section className="mt-8 border-s-2 border-accent ps-5">
+        <h2 className="text-sm font-semibold tracking-tight">{t("nextTitle")}</h2>
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{t("nextBody")}</p>
+      </section>
     </div>
   );
 }

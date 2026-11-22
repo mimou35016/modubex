@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Modubex",
+    "tagline": "La base de votre prochain produit"
+  },
+  "nav": {
+    "appName": "Modubex",
+    "foundation": "Fondation",
+    "overview": "Aperçu",
+    "planned": "Modules prévus",
+    "comingLater": "Étape ultérieure",
+    "areas": {
+      "store": "Boutique d'apps",
+      "users": "Utilisateurs et rôles",
+      "license": "Licence",
+      "audit": "Journaux d'audit",
+      "settings": "Paramètres",
+      "profile": "Profil"
+    }
+  },
+  "header": {
+    "breadcrumb": "Fondation / Aperçu",
+    "language": "Langue",
+    "theme": "Thème",
+    "themes": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    }
+  },
+  "overview": {
+    "title": "Les fondations sont en place.",
+    "subtitle": "L'étape 0 met en place les outils, les contrôles et l'interface. Chaque vérification ci-dessous lit l'état réel du projet.",
+    "readinessTitle": "État de la fondation",
+    "readinessHint": "Calculé à partir des fichiers et de la configuration de ce dépôt.",
+    "checks": {
+      "lockfile": "Fichier de verrouillage",
+      "scripts": "Scripts de développement",
+      "ci": "Contrôle CI",
+      "database": "Base de données configurée",
+      "locales": "Registre des langues",
+      "prisma": "Client Prisma"
+    },
+    "states": {
+      "ready": "Prêt",
+      "pending": "En attente"
+    },
+    "nextTitle": "Ensuite : identité et sessions",
+    "nextBody": "L'étape 1 ajoute Better Auth, un propriétaire initial et la première connexion réelle.",
+    "version": "Version",
+    "environment": "Environnement"
+  }
+}

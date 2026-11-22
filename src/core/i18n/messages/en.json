@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Modubex",
+    "tagline": "The foundation for your next product"
+  },
+  "nav": {
+    "appName": "Modubex",
+    "foundation": "Foundation",
+    "overview": "Overview",
+    "planned": "Planned modules",
+    "comingLater": "Later milestone",
+    "areas": {
+      "store": "App store",
+      "users": "Users and roles",
+      "license": "License",
+      "audit": "Audit logs",
+      "settings": "Settings",
+      "profile": "Profile"
+    }
+  },
+  "header": {
+    "breadcrumb": "Foundation / Overview",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "overview": {
+    "title": "The foundation is in place.",
+    "subtitle": "Milestone 0 establishes the tooling, gates, and shell. Each check below reads real project state.",
+    "readinessTitle": "Foundation readiness",
+    "readinessHint": "Derived from files and configuration in this checkout.",
+    "checks": {
+      "lockfile": "Dependency lockfile",
+      "scripts": "Developer scripts",
+      "ci": "CI gate",
+      "database": "Database configured",
+      "locales": "Locale registry",
+      "prisma": "Prisma client"
+    },
+    "states": {
+      "ready": "Ready",
+      "pending": "Pending"
+    },
+    "nextTitle": "Next up: identity and sessions",
+    "nextBody": "Milestone 1 introduces Better Auth, a seeded Owner, and the first real sign-in.",
+    "version": "Version",
+    "environment": "Environment"
+  }
+}
