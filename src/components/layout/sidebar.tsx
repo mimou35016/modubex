@@ -1,27 +1,38 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
   BadgeCheck,
   Blocks,
   LayoutDashboard,
+  MailPlus,
   ScrollText,
   Settings,
+  Shield,
   UserRound,
   Users,
 } from "lucide-react";
+import { NavLink } from "@/app/(app)/_components/nav-link";
+import { hasPermission, type PermissionKeys } from "@/app/(app)/_components/permissions";
 
-type Props = { version: string; currentMilestone: string };
+type Props = { version: string; currentMilestone: string; permissions?: PermissionKeys };
 
-export async function Sidebar({ version, currentMilestone }: Props) {
+const linkClass =
+  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-accent-soft hover:text-foreground";
+const activeClass = "bg-accent-soft text-accent";
+const subLinkClass =
+  "flex items-center gap-2 rounded-md ps-9 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-accent-soft hover:text-foreground";
+
+export async function Sidebar({ version, currentMilestone, permissions = [] }: Props) {
   const t = await getTranslations("nav");
   const planned = [
     { icon: Blocks, label: t("areas.store"), milestone: "M4" },
-    { icon: Users, label: t("areas.users"), milestone: "M2" },
     { icon: BadgeCheck, label: t("areas.license"), milestone: "M3" },
-    { icon: ScrollText, label: t("areas.audit"), milestone: "M2" },
     { icon: Settings, label: t("areas.settings"), milestone: "M3" },
     { icon: UserRound, label: t("areas.profile"), milestone: "M5" },
   ];
+  const canSeeUsers = hasPermission(permissions, "users.read");
+  const canSeeRoles = hasPermission(permissions, "roles.read");
+  const canInvite = hasPermission(permissions, "users.invite");
+  const canSeeAudit = hasPermission(permissions, "audit.read");
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-e bg-surface md:flex">
@@ -36,24 +47,65 @@ export async function Sidebar({ version, currentMilestone }: Props) {
       </div>
 
       <nav className="flex-1 px-3 py-6" aria-label={t("foundation")}>
-        <p className="px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
-          {t("overview")}
-        </p>
-        <Link
-          href="/"
-          aria-current="page"
-          className="flex items-center gap-3 rounded-md bg-accent-soft px-3 py-2 text-sm font-medium text-accent"
-        >
+        <p className="px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">{t("overview")}</p>
+        <NavLink href="/" exact className={linkClass} activeClassName={activeClass}>
           <LayoutDashboard className="size-4" aria-hidden="true" />
           {t("overview")}
-        </Link>
+        </NavLink>
+
+        {canInvite ? (
+          <NavLink
+            href="/invite"
+            exact
+            className={`mt-1 ${linkClass}`}
+            activeClassName={activeClass}
+          >
+            <MailPlus className="size-4" aria-hidden="true" />
+            {t("invite")}
+          </NavLink>
+        ) : null}
+
+        {canSeeUsers || canSeeRoles ? (
+          <>
+            <p className="mt-8 px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
+              {t("manage")}
+            </p>
+            {canSeeUsers ? (
+              <NavLink href="/users" className={linkClass} activeClassName={activeClass}>
+                <Users className="size-4" aria-hidden="true" />
+                {t("areas.users")}
+              </NavLink>
+            ) : null}
+            {canSeeRoles ? (
+              <NavLink
+                href="/roles"
+                exact
+                className={`mt-1 ${subLinkClass}`}
+                activeClassName={activeClass}
+              >
+                <Shield className="size-3.5" aria-hidden="true" />
+                {t("areas.roles")}
+              </NavLink>
+            ) : null}
+            {canSeeAudit ? (
+              <NavLink href="/audit" className={`mt-1 ${linkClass}`} activeClassName={activeClass}>
+                <ScrollText className="size-4" aria-hidden="true" />
+                {t("areas.audit")}
+              </NavLink>
+            ) : null}
+          </>
+        ) : null}
 
         <p className="mt-8 px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
           {t("planned")}
         </p>
         <ul className="space-y-1">
           {planned.map((item) => (
-            <li key={item.milestone + item.label} className="flex items-center gap-3 px-3 py-2 text-sm text-muted">
+            <li
+              key={item.milestone + item.label}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-muted"
+              title={t("comingLater")}
+            >
               <item.icon className="size-4 opacity-70" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
               <span className="font-mono text-[10px] opacity-70">{item.milestone}</span>

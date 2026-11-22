@@ -16,28 +16,28 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - [x] M0.9 Replace stale stock README with real setup steps; add `.env.example`.
 
 ## M1 — Identity & sessions
-**Exit:** AC1 — seeded Owner, working sign-in.
+**Exit:** AC1 — seeded Owner, working sign-in. **Status: complete.**
 
-- M1.1 Better Auth + Prisma adapter; migrate User / Session / Account.
-- M1.2 Email/password sign-in and sign-up; configurable password rules.
-- M1.3 OAuth provider wiring (providers still open in PRD §10).
-- M1.4 TOTP 2FA enrollment, challenge, and enforcement policy.
-- M1.5 Email verification, password reset, invitation acceptance.
-- M1.6 Rate limiting on authentication endpoints.
-- M1.7 Audit successful and failed sign-ins via `audit.log()`.
-- M1.8 Seed first Owner; sign-in smoke test from a fresh database.
+- [x] M1.1 Better Auth + Prisma adapter; migrate User / Session / Account.
+- [x] M1.2 Email/password sign-in and sign-up; configurable password rules.
+- [x] M1.3 OAuth provider wiring (providers still open in PRD §10).
+- [x] M1.4 TOTP 2FA enrollment, challenge, and enforcement policy.
+- [x] M1.5 Email verification, password reset, invitation acceptance.
+- [x] M1.6 Rate limiting on authentication endpoints.
+- [x] M1.7 Audit successful and failed sign-ins via `audit.log()`.
+- [x] M1.8 Seed first Owner; sign-in smoke test from a fresh database.
 
 ## M2 — Authorization core (RBAC + audit)
-**Exit:** AC3, AC4, AC10.
+**Exit:** AC3, AC4, AC10. **Status: complete.**
 
-- M2.1 Permission catalog in code, zod-validated (`users.read`, `roles.manage`, …).
-- M2.2 Role / Permission / RolePermission / UserRole models; seed locked Owner and Admin roles.
-- M2.3 Server-side `requirePermission()` guard for routes, server actions, and APIs — check permissions, not role names.
-- M2.4 Custom role create/edit/delete and assignment; last-Owner cannot be removed or demoted.
-- M2.5 User management: invite, deactivate, reactivate, change role, view sessions.
-- M2.6 Append-only `audit.log()` helper + AuditLog model; before/after values.
-- M2.7 Audit viewer with filters (user, action, date range, module) and CSV export.
-- M2.8 Retention policy (forever / N days) + purge that writes its own audit entry.
+- [x] M2.1 Permission catalog in code, zod-validated (`users.read`, `roles.manage`, …).
+- [x] M2.2 Role / Permission / RolePermission / UserRole models; seed locked Owner and Admin roles.
+- [x] M2.3 Server-side `requirePermission()` guard for routes, server actions, and APIs — check permissions, not role names.
+- [x] M2.4 Custom role create/edit/delete and assignment; last-Owner cannot be removed or demoted.
+- [x] M2.5 User management: invite, deactivate, reactivate, change role, view sessions.
+- [x] M2.6 Append-only `audit.log()` helper + AuditLog model; before/after values.
+- [x] M2.7 Audit viewer with filters (user, action, date range, module) and CSV export.
+- [x] M2.8 Retention policy (forever / N days) + purge that writes its own audit entry.
 
 ## M3 — Settings & entitlements
 **Exit:** AC7, AC8.

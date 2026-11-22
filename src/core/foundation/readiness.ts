@@ -45,6 +45,15 @@ export function getFoundationReadiness() {
 
   const prismaGenerated = existsSync(path.join(root, "node_modules", ".prisma", "client", "index.d.ts"));
 
+  const completedMilestones = tasksFile
+    .split(/^## /m)
+    .slice(1)
+    .filter((section) => section.includes("Status: complete."))
+    .map((section) => section.match(/^(M\d+)/)?.[1] ?? "")
+    .filter(Boolean);
+  const currentMilestone =
+    completedMilestones[completedMilestones.length - 1] ?? milestones[0] ?? "M0";
+
   const checks: ReadinessCheck[] = [
     {
       id: "lockfile",
@@ -81,7 +90,8 @@ export function getFoundationReadiness() {
   return {
     checks,
     milestones: milestones.length > 0 ? milestones : ["M0"],
-    currentMilestone: milestones[0] ?? "M0",
+    currentMilestone,
     version: manifest.version ?? "0.0.0",
   };
 }
+

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Current state
-- M0 (foundation and quality baseline) is implemented. The app shell, CI, lockfile, Prisma baseline, locale registry, and theming exist; auth, RBAC, modules, settings, entitlements, and dashboard pages do **not** exist yet.
+- M0 (foundation and quality baseline), M1 (identity & sessions), and M2 (authorization core) are complete. The app shell, CI, lockfile, Prisma baseline, locale registry, theming, Better Auth identity/sessions, TOTP 2FA, invitations, and the Owner seed exist; M2 adds the permission catalog, Role/Permission/RolePermission/UserRole models, `requirePermission`/`requirePagePermission` guards, custom role and user management, last-Owner protection, expanded append-only audit, the audit viewer with CSV export, and retention purge. Modules, settings, entitlements, and their dashboard pages remain unstarted (M3/M4).
 - `docs/PRD.md` is the target spec, not a description of current code. `docs/tasks.md` is the milestone plan. If a rule conflicts with executable config, trust the config.
 - `package.json` is the source of truth for available tooling. Do not invent `npm test`-style commands without adding them there.
 
@@ -15,6 +15,7 @@
 
 ## Layout & toolchain quirks
 - App Router entrypoints: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`. Alias `@/*` → `./src/*`.
+- Auth pages live outside the dashboard shell: `src/app/(auth)/` for public identity pages, `src/app/(app)/` for session-protected pages; `requireSession()` is the DAL seam gating the latter.
 - Tailwind 4 is CSS-first: styles live in `globals.css`; there is no `tailwind.config.*` or `postcss.config.*`. `next.config.ts` maps `*.css` to `@tailwindcss/turbopack` — preserve it, and keep the `next-intl` plugin wrapper.
 - Next 16 generates `LayoutProps<...>` types only after `next dev`/`build`. CI typechecks before building, so layouts use explicit props instead of `LayoutProps` — don't reintroduce it without changing CI order.
 - Locale is a `NEXT_LOCALE` cookie read in `src/i18n/request.ts` and the root layout (`lang`/`dir`). `ar` is RTL. Theme uses `next-themes` with `class` on `<html>`.

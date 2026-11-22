@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getMessages } from "next-intl/server";
-import { AppShell } from "@/components/layout/app-shell";
 import { defaultLocale, getLocaleConfig, isLocale } from "@/core/i18n/locales";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -28,7 +27,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const requested = cookieStore.get("NEXT_LOCALE")?.value;
   const locale = isLocale(requested) ? requested : defaultLocale;
   const messages = await getMessages();
-  const version = (await import("../../package.json")).default.version as string;
 
   return (
     <html
@@ -39,9 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <body className="min-h-full flex flex-col">
         <Providers locale={locale} messages={messages}>
-          <AppShell version={version} currentMilestone="M0">
-            {children}
-          </AppShell>
+          {children}
         </Providers>
       </body>
     </html>

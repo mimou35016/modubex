@@ -8,10 +8,14 @@
     "foundation": "Foundation",
     "overview": "Overview",
     "planned": "Planned modules",
+    "manage": "Manage",
     "comingLater": "Later milestone",
+    "signOut": "Sign out",
+    "invite": "Invite member",
     "areas": {
       "store": "App store",
       "users": "Users and roles",
+      "roles": "Roles",
       "license": "License",
       "audit": "Audit logs",
       "settings": "Settings",
@@ -28,9 +32,126 @@
       "system": "System"
     }
   },
+  "common": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {total}",
+    "paginationLabel": "Pagination",
+    "actionError": "The action could not be completed. Please try again."
+  },
+  "auth": {
+    "common": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Full name",
+      "submit": "Continue",
+      "cancel": "Cancel",
+      "backToOverview": "Back to overview",
+      "backToSignIn": "Back to sign in",
+      "newPassword": "New password",
+      "currentPassword": "Current password",
+      "code": "Code"
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Sign in to continue to your workspace.",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "forgot": "Forgot your password?",
+      "orDivider": "or continue with",
+      "oauthError": "We couldn't sign you in with that provider. Please try again."
+    },
+    "signUp": {
+      "title": "Create an account",
+      "subtitle": "Set up your identity to access Modubex.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "passwordHelp": "Your password must meet these requirements:",
+      "rules": {
+        "minLength": "At least 12 characters",
+        "maxLength": "At most 128 characters",
+        "number": "At least one number",
+        "symbol": "At least one symbol",
+        "lowercase": "At least one lowercase letter",
+        "uppercase": "At least one uppercase letter"
+      }
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we will send a reset link.",
+      "submit": "Send reset link",
+      "success": "If an account exists, a reset link is on its way."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "submit": "Save new password",
+      "success": "Your password has been reset. You can sign in now.",
+      "missingToken": "This reset link is invalid or has expired."
+    },
+    "verify": {
+      "title": "Verify your email",
+      "sent": "Check your inbox for a verification link. In this milestone the link is written to the server log.",
+      "verify": "Verify email",
+      "resend": "Resend verification email",
+      "success": "Your email address has been verified.",
+      "intro": "Enter your email to request a new verification link.",
+      "tokenTitle": "Confirm your email",
+      "tokenBody": "Use the button below to confirm the address linked to your account."
+    },
+    "twoFactor": {
+      "challengeTitle": "Two-factor authentication",
+      "challengeSubtitle": "Enter the code from your authenticator app.",
+      "code": "Authentication code",
+      "verify": "Verify code",
+      "enrollTitle": "Set up two-factor authentication",
+      "enrollSubtitle": "Add an authenticator app to protect your account.",
+      "secretLabel": "Manual key",
+      "backupCodes": "Backup codes",
+      "enable": "Enable two-factor authentication",
+      "success": "Two-factor authentication is enabled.",
+      "invalidCode": "That code is not valid. Try again.",
+      "requiredTitle": "Two-factor authentication required",
+      "requiredBody": "Verify your identity to continue.",
+      "backupCode": "Backup code",
+      "useBackupCode": "Use a backup code instead",
+      "useAuthenticator": "Use an authenticator code instead",
+      "saveCodes": "Store these codes somewhere safe; each one can be used once.",
+      "disableTitle": "Already enabled?",
+      "disableSubtitle": "Disable two-factor authentication with your password before setting it up again.",
+      "disable": "Disable two-factor authentication",
+      "disabled": "Two-factor authentication has been disabled."
+    },
+    "invitation": {
+      "title": "Accept an invitation",
+      "subtitle": "Confirm the invitation to join this workspace.",
+      "submit": "Accept invitation",
+      "success": "Invitation accepted. You can continue to the workspace.",
+      "createSubmit": "Create invitation",
+      "createTitle": "Invite a teammate",
+      "createSubtitle": "Create an invitation link for someone to join this workspace.",
+      "email": "Invitee email",
+      "role": "Role",
+      "created": "Invitation created.",
+      "acceptTitle": "Join Modubex",
+      "acceptSubmit": "Accept and continue",
+      "invalidToken": "This invitation link is invalid or has expired.",
+      "acceptLink": "Invitation link",
+      "roles": {
+        "admin": "Admin",
+        "member": "Member"
+      }
+    },
+    "errors": {
+      "invalidCredentials": "The email or password is incorrect.",
+      "generic": "Something went wrong. Please try again.",
+      "weakPassword": "Choose a stronger password.",
+      "emailTaken": "An account with this email already exists.",
+      "rateLimited": "Too many attempts. Please wait before trying again."
+    }
+  },
   "overview": {
     "title": "The foundation is in place.",
-    "subtitle": "Milestone 0 establishes the tooling, gates, and shell. Each check below reads real project state.",
+    "subtitle": "The foundation and identity layers are in place. Each check below reads real project state.",
     "readinessTitle": "Foundation readiness",
     "readinessHint": "Derived from files and configuration in this checkout.",
     "checks": {
@@ -45,9 +166,135 @@
       "ready": "Ready",
       "pending": "Pending"
     },
-    "nextTitle": "Next up: identity and sessions",
-    "nextBody": "Milestone 1 introduces Better Auth, a seeded Owner, and the first real sign-in.",
+    "nextTitle": "Next up: authorization core",
+    "nextBody": "Milestone 2 adds the permission catalog, RBAC guards, role management, and the audit viewer.",
     "version": "Version",
     "environment": "Environment"
+  },
+  "rbac": {
+    "title": "Roles and permissions",
+    "subtitle": "System roles are locked. Custom roles combine permissions from the catalog.",
+    "locked": "Locked",
+    "customRole": "Custom role",
+    "ownerAssignmentHint": "Assigning or removing Owner requires the owner assignment permission.",
+    "permissionsTitle": "Permission catalog",
+    "permissionsSubtitle": "Permissions registered in this workspace, grouped by module. These checkboxes are read-only.",
+    "noPermissions": "No permissions have been registered yet.",
+    "fields": {
+      "key": "Key",
+      "name": "Name",
+      "description": "Description"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage members, role assignments, and active sessions.",
+    "invite": "Invite member",
+    "searchTitle": "Find a user",
+    "searchLabel": "Search by name or email",
+    "searchPlaceholder": "Name or email",
+    "searchSubmit": "Search",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "status": "Status",
+      "roles": "Roles",
+      "createdAt": "Created"
+    },
+    "states": {
+      "active": "Active",
+      "deactivated": "Deactivated"
+    },
+    "noRoles": "No roles assigned",
+    "empty": "No users match your search.",
+    "detail": {
+      "back": "Back to users",
+      "active": "Active",
+      "deactivated": "Deactivated",
+      "accountTitle": "Account",
+      "createdAt": "Created",
+      "rolesTitle": "Assigned roles",
+      "rolesHint": "Roles determine what this member can access.",
+      "lastOwnerWarning": "The last Owner cannot be removed or demoted.",
+      "roleLocked": "System role",
+      "noRoles": "No roles assigned",
+      "assignRoleLabel": "Role to assign",
+      "assignRolePlaceholder": "Select a role",
+      "assignRoleSubmit": "Assign role",
+      "unassignRole": "Remove",
+      "sessionsTitle": "Active sessions",
+      "noSessions": "No active sessions.",
+      "ipAddress": "IP address",
+      "userAgent": "Device",
+      "expiresAt": "Expires",
+      "noValue": "Not provided",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "deactivateHint": "Deactivated members cannot sign in until reactivated.",
+      "reactivateHint": "Reactivate this account to allow sign-in again.",
+      "revokeSession": "Revoke",
+      "saved": "Changes saved."
+    }
+  },
+  "roles": {
+    "title": "Custom roles",
+    "systemTitle": "System roles",
+    "noSystem": "No system roles have been seeded.",
+    "noCustom": "No custom roles yet.",
+    "permissionLabel": "Permissions",
+    "createTitle": "Create a role",
+    "createSubmit": "Create role",
+    "edit": "Edit",
+    "save": "Save changes",
+    "deleteConfirmLabel": "I understand this role will be permanently deleted.",
+    "deleteSubmit": "Delete role",
+    "invalidInput": "Check the key, name, and selected permissions before continuing.",
+    "created": "Role created.",
+    "updated": "Role updated.",
+    "deleted": "Role deleted."
+  },
+  "audit": {
+    "title": "Audit logs",
+    "subtitle": "Filter security and admin events, export them, or run a retention purge.",
+    "filtersTitle": "Filters",
+    "filterAction": "Action",
+    "filterActionPlaceholder": "e.g. user.updated",
+    "filterUser": "User ID",
+    "filterUserPlaceholder": "User identifier",
+    "filterModule": "Module",
+    "filterModulePlaceholder": "Module name",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterSubmit": "Apply filters",
+    "filterReset": "Clear filters",
+    "columns": {
+      "actor": "Actor",
+      "action": "Action",
+      "target": "Target",
+      "module": "Module",
+      "changes": "Before / after",
+      "createdAt": "When"
+    },
+    "before": "Before",
+    "after": "After",
+    "noValue": "—",
+    "noActor": "Unknown actor",
+    "noTarget": "None",
+    "empty": "No audit entries match these filters.",
+    "export": "Export CSV",
+    "retentionTitle": "Retention policy",
+    "retentionForever": "Keep forever.",
+    "retentionDays": "Keep {days} days.",
+    "purgeTitle": "Run retention purge",
+    "purgeHint": "Deletes entries older than the retention window and writes its own audit entry.",
+    "purgeDisabledHint": "Purge is unavailable while retention is set to keep logs forever.",
+    "purgeConfirmLabel": "I understand this permanently deletes old audit entries.",
+    "purgeSubmit": "Run purge",
+    "purgeSuccess": "Retention purge completed."
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "body": "You do not have permission to view this page. Ask an administrator if you believe this is a mistake.",
+    "back": "Back to overview"
   }
 }

@@ -1,5 +1,6 @@
-// M0 baseline. Domain models are introduced by M1 (identity) and M2 (RBAC/audit).
-// Module-owned models join this shared schema in M4 and must use a module prefix.
+// M1 identity & sessions plus M2 authorization core. Better Auth owns
+// identity/sessions; RBAC and audit live in our own schema. Module-owned
+// models join this shared schema in M4 and must use a module prefix.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +9,199 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Generated/verified against Better Auth 1.7.27 (`auth generate --adapter prisma`).
+model User {
+  id               String      @id
+  name             String
+  email            String
+  emailVerified    Boolean     @default(false)
+  image            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  twoFactorEnabled Boolean?    @default(false)
+  role             String?
+  banned           Boolean?    @default(false)
+  banReason        String?
+  banExpires       DateTime?
+  sessions         Session[]
+  accounts         Account[]
+  twofactors       TwoFactor[]
+  // RBAC is authoritative; `role` above is kept for Better Auth compatibility.
+  roles            UserRole[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model TwoFactor {
+  id                      String    @id
+  secret                  String
+  backupCodes             String
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+
+  @@index([secret])
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+model RateLimit {
+  id          String @id
+  key         String
+  count       Int
+  lastRequest BigInt
+
+  @@unique([key])
+  @@map("rateLimit")
+}
+
+/// Append-only audit trail. Application code only ever inserts rows.
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  userId      String?
+  email       String?
+  ip          String?
+  userAgent   String?
+  module      String   @default("core")
+  targetType  String?
+  targetId    String?
+  workspaceId String   @default("")
+  before      Json?
+  after       Json?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([module])
+  @@index([workspaceId, createdAt])
+  @@map("auditLog")
+}
+
+/// Permission catalog row. Keys are provisioned from code (core + modules).
+model Permission {
+  id              String           @id @default(cuid())
+  key             String           @unique
+  description     String
+  module          String           @default("core")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permission")
+}
+
+/// Named permission bundle. `workspaceId` is the single-tenant sentinel "".
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String?
+  isSystem    Boolean          @default(false)
+  workspaceId String           @default("")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([workspaceId])
+  @@map("role")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("rolePermission")
+}
+
+/// Role assignment. Workspace scope is ready for the optional multi-workspace module.
+model UserRole {
+  id           String   @id @default(cuid())
+  userId       String
+  roleId       String
+  workspaceId  String   @default("")
+  assignedById String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, workspaceId])
+  @@index([workspaceId])
+  @@map("userRole")
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  role        String    @default("member")
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@map("invitation")
 }
