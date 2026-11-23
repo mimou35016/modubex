@@ -165,7 +165,7 @@
     },
     "version": "الإصدار",
     "environment": "البيئة",
-    "summaryTitle": "ملخص المرحلة M3",
+    "summaryTitle": "ملخص المرحلة M4",
     "summarySubtitle": "الحالة الفعلية لمساحة العمل من الإعدادات وخدمة الصلاحيات.",
     "plan": "الخطة الفعلية",
     "siteName": "اسم الموقع",
@@ -173,6 +173,9 @@
     "auditRetention": "الاحتفاظ بسجلات التدقيق",
     "forever": "إلى الأبد",
     "days": "{days} يومًا",
+    "modulesInstalled": "الوحدات المثبتة",
+    "modulesEnabled": "الوحدات المفعّلة",
+    "modulesAvailable": "الوحدات المتاحة",
     "locales": {
       "en": "الإنجليزية",
       "fr": "الفرنسية",
@@ -421,6 +424,82 @@
       "noValues": "القيم مخفية هنا عمدًا؛ تُعرض حالة التهيئة فقط."
     },
     "viewOnly": "للقراءة فقط"
+  },
+  "modules": {
+    "title": "متجر الوحدات",
+    "subtitle": "اكتشف الوحدات المضمّنة، وأدر دورة حياتها، واضبط الميزات المفعّلة.",
+    "navLabel": "الوحدات",
+    "filters": {
+      "title": "البحث عن وحدة",
+      "queryLabel": "ابحث بالاسم أو الوصف",
+      "queryPlaceholder": "الاسم أو الوصف",
+      "stateLabel": "الحالة",
+      "stateAll": "كل الحالات",
+      "submit": "تطبيق عوامل التصفية",
+      "reset": "مسح عوامل التصفية"
+    },
+    "columns": {
+      "module": "الوحدة",
+      "version": "الإصدار",
+      "state": "الحالة",
+      "plan": "الخطة أو الصلاحية المطلوبة",
+      "dependencies": "التبعيات"
+    },
+    "states": {
+      "available": "متاحة",
+      "installed": "مثبتة",
+      "enabled": "مفعّلة",
+      "disabled": "معطّلة"
+    },
+    "entitlements": {
+      "store": "متجر الوحدات",
+      "premium": "الوحدات المميزة"
+    },
+    "lifecycle": {
+      "install": "تثبيت",
+      "enable": "تفعيل",
+      "disable": "تعطيل",
+      "configure": "إعداد",
+      "uninstall": "إلغاء التثبيت",
+      "keepData": "إلغاء التثبيت مع الاحتفاظ بالبيانات",
+      "deleteData": "إلغاء التثبيت وحذف البيانات"
+    },
+    "confirm": {
+      "title": "تأكيد الإزالة النهائية",
+      "body": "لا يمكن التراجع عن حذف بيانات الوحدة.",
+      "typedHint": "اكتب {moduleId} بالضبط للتأكيد.",
+      "mismatch": "لا يطابق التأكيد معرّف الوحدة."
+    },
+    "typedConfirmLabel": "اكتب معرّف الوحدة للتأكيد",
+    "deleteDataLabel": "حذف بيانات الوحدة",
+    "keepDataLabel": "الاحتفاظ ببيانات الوحدة",
+    "locked": "مقفلة حسب الخطة",
+    "lockedHint": "رقّ خطتك لإدارة هذه الوحدة.",
+    "planRequired": "تتطلب {plan}",
+    "dependenciesRequired": "تتطلب: {modules}",
+    "dependentsBlocked": "تعتمد وحدات مفعّلة أخرى على هذه الوحدة.",
+    "notFound": "الوحدة غير موجودة.",
+    "noModules": "لا توجد وحدات مضمّنة في هذا الإصدار.",
+    "noResults": "لا توجد وحدات تطابق عوامل التصفية.",
+    "noDescription": "لا يوجد وصف.",
+    "noDependencies": "لا شيء",
+    "noRequirement": "لا توجد متطلبات للخطة",
+    "unknownVersion": "غير معروف",
+    "dataRetained": "البيانات محتفظة",
+    "manageRequired": "يمكنك عرض الوحدات، لكن ليس لديك صلاحية تغييرها.",
+    "installed": "تم تثبيت الوحدة.",
+    "enabled": "تم تفعيل الوحدة.",
+    "disabled": "تم تعطيل الوحدة.",
+    "uninstalled": "تم إلغاء تثبيت الوحدة.",
+    "settingsTitle": "إعدادات الوحدة",
+    "settingsHint": "تُنشأ الحقول من مخطط الإعدادات المُتحقّق منه في الوحدة.",
+    "settingsSave": "حفظ التغييرات",
+    "settingsSaved": "تم حفظ إعدادات الوحدة.",
+    "settingsBack": "العودة إلى الوحدات",
+    "settingsReadOnly": "ليس لديك صلاحية تغيير إعدادات الوحدة.",
+    "actionError": "تعذّر إكمال إجراء الوحدة.",
+    "fieldFallback": "{key}",
+    "fieldDescriptionFallback": "قيمة الإعداد لـ {key}."
   },
   "license": {
     "title": "الترخيص والصلاحيات",

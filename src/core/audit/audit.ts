@@ -34,6 +34,11 @@ export const auditActions = {
   settingsUpdated: "settings.updated",
   licensePlanChanged: "license.plan.changed",
   licenseKeyUpdated: "license.key.updated",
+  modulesInstalled: "modules.installed",
+  modulesEnabled: "modules.enabled",
+  modulesDisabled: "modules.disabled",
+  modulesSettingsUpdated: "modules.settings.updated",
+  modulesUninstalled: "modules.uninstalled",
 } as const;
 
 export type CoreAuditAction = (typeof auditActions)[keyof typeof auditActions];

@@ -34,6 +34,8 @@ export async function AppShell({
   tagline,
 }: Props) {
   const t = await getTranslations("nav");
+  const tModules = await getTranslations("modules");
+  const canSeeModules = hasPermission(permissions, "modules.read");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
   const canInvite = hasPermission(permissions, "users.invite");
@@ -59,6 +61,11 @@ export async function AppShell({
           <NavLink href="/" exact className={mobileLink} activeClassName={mobileActive}>
             {t("overview")}
           </NavLink>
+          {canSeeModules ? (
+            <NavLink href="/modules" className={mobileLink} activeClassName={mobileActive}>
+              {tModules("navLabel")}
+            </NavLink>
+          ) : null}
           {canSeeUsers ? (
             <NavLink href="/users" className={mobileLink} activeClassName={mobileActive}>
               {t("areas.users")}

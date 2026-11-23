@@ -47,6 +47,14 @@ export const auditListParamsSchema = z.object({
   page: pageField,
 });
 
+export const modulesListParamsSchema = z.object({
+  q: textField,
+  state: z
+    .enum(["all", "available", "installed", "enabled", "disabled"])
+    .catch("all")
+    .default("all"),
+});
+
 export const userIdParamSchema = z.string().trim().min(1).max(191);
 
 export type AuditListParams = z.infer<typeof auditListParamsSchema>;

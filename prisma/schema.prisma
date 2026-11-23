@@ -244,3 +244,25 @@ model License {
   @@index([workspaceId])
   @@map("license")
 }
+
+/// Module lifecycle state. Installing a module is a DB state change; module
+/// code is bundled at build time and is never loaded at runtime.
+model ModuleInstall {
+  id            String    @id @default(cuid())
+  moduleId      String    @unique
+  state         String    @default("available")
+  version       String
+  config        Json      @default("{}")
+  dataRetained  Boolean   @default(false)
+  workspaceId   String    @default("")
+  installedById String?
+  installedAt   DateTime?
+  enabledAt     DateTime?
+  disabledAt    DateTime?
+  uninstalledAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@map("moduleInstall")
+}

@@ -165,7 +165,7 @@
     },
     "version": "Version",
     "environment": "Environment",
-    "summaryTitle": "Milestone 3 summary",
+    "summaryTitle": "Milestone 4 summary",
     "summarySubtitle": "Live workspace state from settings and the entitlement seam.",
     "plan": "Effective plan",
     "siteName": "Site name",
@@ -173,6 +173,9 @@
     "auditRetention": "Audit retention",
     "forever": "Forever",
     "days": "{days} days",
+    "modulesInstalled": "Installed modules",
+    "modulesEnabled": "Enabled modules",
+    "modulesAvailable": "Available modules",
     "locales": {
       "en": "English",
       "fr": "French",
@@ -421,6 +424,82 @@
       "noValues": "Values are intentionally hidden here; only configuration status is shown."
     },
     "viewOnly": "View only"
+  },
+  "modules": {
+    "title": "Module store",
+    "subtitle": "Discover bundled modules, manage their lifecycle, and configure enabled features.",
+    "navLabel": "Modules",
+    "filters": {
+      "title": "Find a module",
+      "queryLabel": "Search by name or description",
+      "queryPlaceholder": "Name or description",
+      "stateLabel": "State",
+      "stateAll": "All states",
+      "submit": "Apply filters",
+      "reset": "Clear filters"
+    },
+    "columns": {
+      "module": "Module",
+      "version": "Version",
+      "state": "State",
+      "plan": "Required plan or entitlement",
+      "dependencies": "Dependencies"
+    },
+    "states": {
+      "available": "Available",
+      "installed": "Installed",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "entitlements": {
+      "store": "Module store",
+      "premium": "Premium modules"
+    },
+    "lifecycle": {
+      "install": "Install",
+      "enable": "Enable",
+      "disable": "Disable",
+      "configure": "Configure",
+      "uninstall": "Uninstall",
+      "keepData": "Uninstall and keep data",
+      "deleteData": "Uninstall and delete data"
+    },
+    "confirm": {
+      "title": "Confirm permanent removal",
+      "body": "Deleting module data cannot be undone.",
+      "typedHint": "Type {moduleId} exactly to confirm.",
+      "mismatch": "The confirmation does not match the module id."
+    },
+    "typedConfirmLabel": "Type the module id to confirm",
+    "deleteDataLabel": "Delete module data",
+    "keepDataLabel": "Keep module data",
+    "locked": "Locked by plan",
+    "lockedHint": "Upgrade your plan to manage this module.",
+    "planRequired": "Requires {plan}",
+    "dependenciesRequired": "Requires: {modules}",
+    "dependentsBlocked": "Other enabled modules depend on this module.",
+    "notFound": "Module not found.",
+    "noModules": "No modules are bundled in this build.",
+    "noResults": "No modules match your filters.",
+    "noDescription": "No description provided.",
+    "noDependencies": "None",
+    "noRequirement": "No plan requirement",
+    "unknownVersion": "Unknown",
+    "dataRetained": "Data retained",
+    "manageRequired": "You can view modules but do not have permission to change them.",
+    "installed": "Module installed.",
+    "enabled": "Module enabled.",
+    "disabled": "Module disabled.",
+    "uninstalled": "Module uninstalled.",
+    "settingsTitle": "Module settings",
+    "settingsHint": "Fields are generated from the module's validated settings schema.",
+    "settingsSave": "Save changes",
+    "settingsSaved": "Module settings saved.",
+    "settingsBack": "Back to modules",
+    "settingsReadOnly": "You do not have permission to change module settings.",
+    "actionError": "The module action could not be completed.",
+    "fieldFallback": "{key}",
+    "fieldDescriptionFallback": "Configuration value for {key}."
   },
   "license": {
     "title": "License and entitlements",

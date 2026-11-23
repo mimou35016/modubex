@@ -1,6 +1,6 @@
 # User guide
 
-This guide covers the day-to-day admin flows available through M3: users, roles, invitations, settings, the audit log, and licensing. Sign-in, two-factor authentication, password reset, and invitation acceptance are described in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), and runtime settings are detailed in [`settings.md`](settings.md). The module store and profile pages arrive in later milestones.
+This guide covers the day-to-day admin flows available through M4: users, roles, invitations, the module store, settings, the audit log, and licensing. Sign-in, two-factor authentication, password reset, and invitation acceptance are described in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), runtime settings are detailed in [`settings.md`](settings.md), and module authoring is in [`modules.md`](modules.md). Profile pages arrive in M5.
 
 Every page is permission-gated. **UI actions are permission-aware**: controls you are not allowed to use are hidden or disabled, but the server checks the permission again for every action and direct request. Hiding a control never grants or removes access by itself.
 
@@ -11,7 +11,7 @@ Every page is permission-gated. **UI actions are permission-aware**: controls yo
 - **Member** — everyday access to the dashboard; no user, role, or audit administration.
 - **Custom roles** — created by an Admin or Owner from a chosen set of permissions; editable and deletable like any custom role.
 
-An account can hold more than one role; its access is the combination of those roles' permissions.
+An account can hold more than one role; its access is the combination of those roles' permissions. Installed modules contribute their own `<module-id>.*` permissions to the catalog, and their defaults are added to the system roles on install/enable.
 
 ## Users: `/users` and `/users/[id]`
 
@@ -49,12 +49,25 @@ Owner, Admin, and Member roles are shown as locked: no edit or delete action is 
 - **Workspace** — sets and displays the workspace time zone.
 - **Infrastructure** — read-only env status only: secrets and URLs are masked, non-secret bootstrap numbers are shown, and restart-required values are labeled. There are no toggles here.
 
+## Modules: `/modules` (App store)
+
+Open **App store** from the sidebar (`/modules`, requires `modules.read`; management actions require `modules.manage`). The list shows the modules bundled with this build and their **real** state — `available`, `installed`, `enabled`, or `disabled` — plus version, required plan/entitlement, and dependencies. A module you have never installed is shown as `available` because no `ModuleInstall` row exists yet.
+
+- **Install** (`modules.manage`): the plan must include `modules.store` and any key the module requires, and every dependency must already be enabled. Installation records the version and you as the installer; it does not make the module live yet.
+- **Enable** (`modules.manage`): runs the same plan and dependency checks, then makes the module's pages, sidebar entries, and permissions available immediately. Its messages join the UI with English fallback; disabling removes them again.
+- **Configure**: an installed module (enabled or disabled) has a **Settings** action at `/modules/<module-id>/settings`, which also requires the `modules.store` entitlement. The form is generated from the module's validated schema; save validates input before persisting and takes effect without a restart. Invalid values are rejected and nothing is stored.
+- **Use** module pages from the module's sidebar entries or directly at `/modules/run/<module-id>/…`. Links and pages are permission-gated; a disabled module's routes are unavailable even if you know the URL.
+- **Disable** (`modules.manage`): removes routes and sidebar entries immediately but keeps configuration and data, so you can re-enable later. You cannot disable a module while another **enabled** module depends on it; the store names the blockers.
+- **Uninstall** (`modules.manage`): choose **Uninstall and keep data** or **Uninstall and delete data**. Keeping data preserves the module's rows and configuration and returns it to `available`, so reinstalling restores your setup. Deleting data requires typing the exact module id to confirm; it then runs the module's cleanup hook and removes that data permanently. Both options are blocked by enabled dependents and are recorded in the audit log with the option you chose.
+
+Installing, enabling, disabling, changing settings, and both uninstall paths write strict before/after audit entries with module-prefixed actions. On a Free plan the store is not eligible (`modules.store` is Pro+), and Enterprise-only modules also require `modules.premium`. A forbidden result means either the permission or the plan check failed; nothing was changed. See [`licensing.md`](licensing.md) and [`modules.md`](modules.md).
+
 ## Audit: `/audit`
 
 `/audit` (requires `audit.read`) is a live, read-only view of security and admin events. Filter by:
 
 - **User** — actor id or email.
-- **Action** — for example `auth.sign_in.failed`, `users.role.changed`, `users.deactivated`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`.
+- **Action** — for example `auth.sign_in.failed`, `users.role.changed`, `users.deactivated`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`, `modules.installed`, `modules.uninstalled`.
 - **Date range** — inclusive from/to timestamps.
 - **Module** — events attributed to a module.
 
@@ -68,7 +81,7 @@ The table shows when the event happened, who performed it, the action, the targe
 
 The `/license` page is live. The sidebar link is shown with `license.read`; the page itself is inside the app shell (`app.access`). It shows the current plan, active and missing entitlement keys, whether a license key is set, and its validity date. Users with `license.manage` get a working form for the plan, an optional license key (leave blank to remove the stored key), and an optional validity date. Changes are validated, audited, and take effect on the next request. Pro and Enterprise users also get a link to advanced performance tuning; Free users do not.
 
-A fresh workspace is seeded on the **Pro** plan. Free covers core access, users, custom roles, audit viewing, and basic settings; Pro adds audit export, advanced performance tuning, and module-store eligibility; Enterprise adds premium-module eligibility. Plans are cumulative. **Advanced performance tuning is unavailable on Free.** No module installation exists in M3.
+A fresh workspace is seeded on the **Pro** plan. Free covers core access, users, custom roles, audit viewing, and basic settings; Pro adds audit export, advanced performance tuning, and module-store eligibility; Enterprise adds premium-module eligibility. Plans are cumulative. **Advanced performance tuning is unavailable on Free.** Module installation is gated by `modules.store` (Pro+) and each module's own plan/entitlements (see [Modules](#modules-modules-app-store)).
 
 Changing the plan writes `license.plan.changed` to the audit log; adding or clearing a license key writes `license.key.updated` with only key _presence_ recorded — never the key itself. Local environment and infrastructure values stay env-only and read-only in the UI; the license plan and key are database state.
 

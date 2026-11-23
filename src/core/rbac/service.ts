@@ -131,17 +131,22 @@ function uniquePermissionKeys(keys: readonly PermissionKey[]): PermissionKey[] {
   return [...new Set<string>(keys)] as PermissionKey[];
 }
 
-function permissionConnectOrCreate(key: string) {
+/** Create data derived from the aggregated core + module descriptor catalog. */
+function permissionCreateData(key: string) {
   const descriptor = permissionDescriptor(key);
+  return {
+    key,
+    description: descriptor?.description ?? `Permission ${key}`,
+    module: descriptor?.module ?? key.split(".")[0] ?? "core",
+  };
+}
+
+function permissionConnectOrCreate(key: string) {
   return {
     permission: {
       connectOrCreate: {
         where: { key },
-        create: {
-          key,
-          description: descriptor?.description ?? `Permission ${key}`,
-          module: descriptor?.module ?? key.split(".")[0] ?? "core",
-        },
+        create: permissionCreateData(key),
       },
     },
   };
@@ -171,11 +176,6 @@ export function systemRolePermissionDiff(
 export async function syncSystemRolePermissions(
   client: Prisma.TransactionClient | PrismaClient,
 ): Promise<void> {
-  const permissionRows = await client.permission.findMany({
-    select: { id: true, key: true },
-  });
-  const permissionIds = new Map(permissionRows.map((row) => [row.key, row.id]));
-
   for (const roleKey of systemRoleKeys) {
     const role = await client.role.findUnique({
       where: { key: roleKey },
@@ -199,6 +199,19 @@ export async function syncSystemRolePermissions(
       .map((item) => item.id);
     if (staleIds.length > 0) {
       await client.rolePermission.deleteMany({ where: { id: { in: staleIds } } });
+    }
+
+    // Module permissions may not have a row yet; upsert from the aggregated
+    // descriptor catalog before wiring them into a locked system role.
+    const permissionIds = new Map<string, string>();
+    for (const key of diff.toAdd) {
+      const permission = await client.permission.upsert({
+        where: { key },
+        update: {},
+        create: permissionCreateData(key),
+        select: { id: true },
+      });
+      permissionIds.set(key, permission.id);
     }
 
     const additions = diff.toAdd.flatMap((key) => {

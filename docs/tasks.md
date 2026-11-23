@@ -58,17 +58,17 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 
 ## M4 — Module system & store
 
-**Exit:** AC5, AC6.
+**Exit:** AC5, AC6. **Status: complete.**
 
-- M4.1 zod manifest schema + build-time discovery of `src/modules/*`; define module id/model prefix convention.
-- M4.2 ModuleInstall model and states (available, installed, enabled, disabled).
-- M4.3 Install/enable gated by permission, license, and enabled dependencies.
-- M4.4 Disable removes routes/sidebar immediately; blocked while enabled modules depend on it.
-- M4.5 Auto-rendered settings panel from manifest zod schema; persist config in DB.
-- M4.6 Uninstall keep-data vs delete-data, typed confirmation, cleanup hook, audit both paths.
-- M4.7 Aggregate module permissions into the central catalog.
-- M4.8 Load module message files into the i18n registry.
-- M4.9 Store UI: discover modules with state, required plan, and dependencies.
+- [x] M4.1 zod manifest schema + build-time discovery of `src/modules/*`; define module id/model prefix convention. The generated registry is refreshed with `npm run modules:generate` and checked in CI with `npm run modules:check`.
+- [x] M4.2 ModuleInstall model and states (available, installed, enabled, disabled); available is derived for bundled modules without a row.
+- [x] M4.3 Install/enable gated by `modules.manage`, `requireModuleInstallEntitlement()`, manifest plan/entitlements, and enabled dependencies.
+- [x] M4.4 Disable removes routes/sidebar immediately; blocked while enabled modules depend on it.
+- [x] M4.5 Auto-rendered settings panel from manifest zod schema; persist config in DB with field labels from module messages.
+- [x] M4.6 Uninstall keep-data vs delete-data, typed confirmation, cleanup hook, audit both paths.
+- [x] M4.7 Aggregate module permissions into the central catalog with `<module-id>.*` keys and system-role defaults.
+- [x] M4.8 Load enabled-module message files into the i18n registry with English fallback.
+- [x] M4.9 Store UI: discover modules with state, required plan, and dependencies; generic module settings and route runner pages are live.
 
 ## M5 — Dashboard & adapters
 

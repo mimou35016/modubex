@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { modulePermissionDescriptors } from "@/core/modules/catalog";
 
 /**
- * Core permission keys. Module manifests add their own prefixed keys in M4;
- * this catalog stays the authoritative source for the built-in permission set.
+ * Core permission keys. Module manifests add their own prefixed keys; the
+ * aggregated catalog below is the authoritative source at runtime.
  */
 export const corePermissionKeys = [
   "app.access",
@@ -24,7 +25,10 @@ export const corePermissionKeys = [
   "modules.manage",
 ] as const;
 
-export type PermissionKey = (typeof corePermissionKeys)[number];
+export type CorePermissionKey = (typeof corePermissionKeys)[number];
+
+/** Core keys keep literal completion; module keys are added from manifests. */
+export type PermissionKey = CorePermissionKey | (string & {});
 
 /** Reserved for the Owner bundle; custom role definitions must never include it. */
 export const ownerAssignmentPermissionKey: PermissionKey = "roles.assign_owner";
@@ -33,15 +37,13 @@ export function isCustomRolePermissionKey(key: string): boolean {
   return key !== ownerAssignmentPermissionKey;
 }
 
-export const permissionKeySchema = z.enum(corePermissionKeys);
-
 export type PermissionDescriptor = {
   key: PermissionKey;
   description: string;
   module: string;
 };
 
-export const permissionCatalog: ReadonlyArray<PermissionDescriptor> = [
+const corePermissionDescriptors: ReadonlyArray<PermissionDescriptor> = [
   { key: "app.access", description: "Sign in and use the application shell.", module: "core" },
   { key: "users.read", description: "View users and their account details.", module: "core" },
   { key: "users.invite", description: "Invite new users to the workspace.", module: "core" },
@@ -79,26 +81,44 @@ export const permissionCatalog: ReadonlyArray<PermissionDescriptor> = [
     description: "Install, configure, enable, and disable modules.",
     module: "core",
   },
-] as const;
+];
 
-const permissionKeySet: ReadonlySet<string> = new Set<string>(corePermissionKeys);
+const coreKeySet: ReadonlySet<string> = new Set<string>(corePermissionKeys);
+
+/** Core descriptors first, followed by module-prefixed descriptors. */
+export const permissionCatalog: ReadonlyArray<PermissionDescriptor> = [
+  ...corePermissionDescriptors,
+  ...modulePermissionDescriptors.filter((descriptor) => !coreKeySet.has(descriptor.key)),
+];
+
+/** Aggregated keys in catalog order; used by schemas and system role bundles. */
+export const permissionKeys: readonly PermissionKey[] = permissionCatalog.map(
+  (descriptor) => descriptor.key,
+);
+
+const permissionKeySet: ReadonlySet<string> = new Set<string>(permissionKeys);
 
 export function isPermissionKey(value: string): value is PermissionKey {
   return permissionKeySet.has(value);
 }
 
+export const permissionKeySchema = z.custom<PermissionKey>(
+  (value): boolean => typeof value === "string" && isPermissionKey(value),
+  { message: "Unknown permission key" },
+);
+
 export const systemRoleKeys = ["owner", "admin", "member"] as const;
 export type SystemRoleKey = (typeof systemRoleKeys)[number];
 
-const ownerPermissions: readonly PermissionKey[] = corePermissionKeys;
-const adminPermissions: readonly PermissionKey[] = corePermissionKeys.filter(
-  (key): key is PermissionKey => isCustomRolePermissionKey(key),
+const ownerPermissions: readonly PermissionKey[] = permissionKeys;
+const adminPermissions: readonly PermissionKey[] = permissionKeys.filter((key) =>
+  isCustomRolePermissionKey(key),
 );
 const memberPermissions: readonly PermissionKey[] = ["app.access"];
 
 /**
- * Default permission bundles for the locked system roles. These are applied by
- * the seed and migration, but the database remains authoritative at runtime.
+ * Default permission bundles for the locked system roles. Owner and Admin
+ * include module permissions; Member only gets application access.
  */
 export function systemRolePermissions(role: SystemRoleKey): readonly PermissionKey[] {
   switch (role) {
@@ -117,7 +137,14 @@ export function isSystemRoleKey(value: string): value is SystemRoleKey {
 
 /** Metadata used when a permission row has to be created on demand. */
 export function permissionDescriptor(key: string): PermissionDescriptor | undefined {
-  return permissionCatalog.find((item) => item.key === key);
+  const descriptor = permissionCatalog.find((item) => item.key === key);
+  if (descriptor) return descriptor;
+  if (!isPermissionKey(key)) return undefined;
+  return {
+    key,
+    description: `Permission ${key}`,
+    module: key.split(".")[0] || "core",
+  };
 }
 
 /** Raised by authorization guards when a session lacks a required permission. */

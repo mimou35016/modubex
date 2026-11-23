@@ -2,7 +2,7 @@
 
 ## Current state
 
-- M0 (foundation and quality baseline), M1 (identity & sessions), M2 (authorization core), and M3 (settings & entitlements) are complete. The app shell, CI, lockfile, Prisma baseline, locale registry, theming, Better Auth identity/sessions, TOTP 2FA, invitations, and the Owner seed exist; M2 adds the permission catalog, Role/Permission/RolePermission/UserRole models, `requirePermission`/`requirePagePermission` guards, custom role and user management, last-Owner protection, expanded append-only audit, the audit viewer with CSV export, and retention purge. M3 adds 13 database-backed runtime settings with live invalidation, the single `getEntitlements()` seam and licensing pages, live password/2FA policies, and the settings and license/entitlements dashboard pages; the module store and module installation remain M4.
+- M0 (foundation and quality baseline), M1 (identity & sessions), M2 (authorization core), M3 (settings & entitlements), and M4 (module system & store) are complete. The app shell, CI, lockfile, Prisma baseline, locale registry, theming, Better Auth identity/sessions, TOTP 2FA, invitations, and the Owner seed exist; M2 adds the permission catalog, Role/Permission/RolePermission/UserRole models, `requirePermission`/`requirePagePermission` guards, custom role and user management, last-Owner protection, expanded append-only audit, the audit viewer with CSV export, and retention purge. M3 adds 13 database-backed runtime settings with live invalidation, the single `getEntitlements()` seam and licensing pages, live password/2FA policies, and the settings and license/entitlements dashboard pages. M4 adds build-time bundled modules discovered through a committed generated registry, `ModuleInstall` state (available/installed/enabled/disabled), audited lifecycle actions gated by `modules.manage`, `requireModuleInstallEntitlement()`, manifest plan/entitlements and enabled dependencies, module-prefixed permissions aggregated into the RBAC catalog, merged module messages with English fallback, and the `/modules` store with generic module settings and route pages.
 - `docs/PRD.md` is the target spec, not a description of current code. `docs/tasks.md` is the milestone plan. If a rule conflicts with executable config, trust the config.
 - `package.json` is the source of truth for available tooling. Do not invent `npm test`-style commands without adding them there.
 
@@ -12,8 +12,9 @@
 - `npm run build` / `npm run start` — production build / serve
 - `npm run typecheck`, `npm run lint` (`lint:fix`), `npm run format` (`format:check`), `npm run test` (`test:watch`)
 - `npm run i18n:check` — core message parity fails CI; module parity warns only
+- `npm run modules:generate`, `npm run modules:check` — regenerate the committed module registry / fail CI when it is stale
 - `npm run db:generate`, `npm run db:migrate`, `npm run db:deploy`, `npm run db:seed`
-- CI order: `typecheck → lint → test → i18n:check → build`. Run it before a PR.
+- CI order: `typecheck → lint → test → i18n:check → build`, with `modules:check` also failing on a stale registry. Run them before a PR.
 
 ## Layout & toolchain quirks
 
@@ -22,6 +23,7 @@
 - Tailwind 4 is CSS-first: styles live in `globals.css`; there is no `tailwind.config.*` or `postcss.config.*`. `next.config.ts` maps `*.css` to `@tailwindcss/turbopack` — preserve it, and keep the `next-intl` plugin wrapper.
 - Next 16 generates `LayoutProps<...>` types only after `next dev`/`build`. CI typechecks before building, so layouts use explicit props instead of `LayoutProps` — don't reintroduce it without changing CI order.
 - Locale is a `NEXT_LOCALE` cookie read in `src/i18n/request.ts` and the root layout (`lang`/`dir`). `ar` is RTL. Theme uses `next-themes` with `class` on `<html>`.
+- Modules live in `src/modules/<id>/`; `src/modules/registry.generated.ts` is committed, generated, and never hand-edited. Run `npm run modules:generate` after manifest changes.
 - `.env*` is gitignored; infrastructure values are env-only and read-only in the UI.
 
 ## PRD rules that constrain implementation
@@ -41,6 +43,7 @@
 
 - `docs/PRD.md` — spec of record (v1 scope, data model, acceptance criteria)
 - `docs/tasks.md` — milestone and task plan
+- `docs/modules.md` — module manifest, lifecycle, and store authoring guide
 
 <!-- BEGIN:nextjs-agent-rules -->
 

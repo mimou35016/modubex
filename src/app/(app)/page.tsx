@@ -1,7 +1,9 @@
 import { getTranslations } from "next-intl/server";
+import type { ModuleStateValue } from "@/app/(app)/_components/modules/module-view";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEntitlements } from "@/core/entitlements/service";
+import { getModuleViews } from "@/core/modules/state";
 import { getFoundationReadiness } from "@/core/foundation/readiness";
 import { getSettingValue } from "@/core/settings/service";
 import { cn } from "@/lib/utils";
@@ -10,12 +12,15 @@ export default async function Home() {
   const t = await getTranslations("overview");
   const tLicense = await getTranslations("license");
   const { checks, milestones, currentMilestone, version } = getFoundationReadiness();
-  const [entitlements, siteName, defaultLocale, retentionDays] = await Promise.all([
+  const [entitlements, siteName, defaultLocale, retentionDays, moduleViews] = await Promise.all([
     getEntitlements(),
     getSettingValue("site.name"),
     getSettingValue("localization.defaultLocale"),
     getSettingValue("audit.retentionDays"),
+    getModuleViews(),
   ]);
+  const countModules = (state: ModuleStateValue) =>
+    moduleViews.filter((view) => view.state === state).length;
   const summary = [
     { label: t("plan"), value: tLicense(`plans.${entitlements.plan}`) },
     { label: t("siteName"), value: siteName },
@@ -24,6 +29,9 @@ export default async function Home() {
       label: t("auditRetention"),
       value: retentionDays === 0 ? t("forever") : t("days", { days: retentionDays }),
     },
+    { label: t("modulesInstalled"), value: String(countModules("installed")) },
+    { label: t("modulesEnabled"), value: String(countModules("enabled")) },
+    { label: t("modulesAvailable"), value: String(countModules("available")) },
   ];
 
   return (

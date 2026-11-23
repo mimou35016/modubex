@@ -4,12 +4,13 @@ import {
   isPermissionKey,
   permissionCatalog,
   permissionKeySchema,
+  permissionKeys,
   systemRolePermissions,
 } from "@/core/rbac/permissions";
 import { systemRolePermissionDiff } from "@/core/rbac/service";
 
-describe("core permission catalog", () => {
-  it("has unique, well-formed keys", () => {
+describe("permission catalog", () => {
+  it("has unique, well-formed core keys", () => {
     expect(new Set(corePermissionKeys).size).toBe(corePermissionKeys.length);
     for (const key of corePermissionKeys) {
       expect(key).toMatch(/^[a-z][a-z0-9_.-]*$/);
@@ -17,29 +18,47 @@ describe("core permission catalog", () => {
     }
   });
 
-  it("matches the catalog to the key list with real descriptions", () => {
-    expect(permissionCatalog.map((item) => item.key)).toEqual([...corePermissionKeys]);
+  it("matches the aggregated catalog to the aggregated key list", () => {
+    expect(permissionCatalog.map((item) => item.key)).toEqual([...permissionKeys]);
+    expect(new Set(permissionKeys).size).toBe(permissionKeys.length);
     for (const item of permissionCatalog) {
-      expect(item.module).toBe("core");
+      expect(item.module.length).toBeGreaterThan(0);
       expect(item.description.trim().length).toBeGreaterThan(10);
+      const isCore = (corePermissionKeys as readonly string[]).includes(item.key);
+      if (isCore) {
+        expect(item.module).toBe("core");
+      } else {
+        expect(item.key.startsWith(`${item.module}.`)).toBe(true);
+      }
     }
   });
 
-  it("exposes a working key guard", () => {
+  it("exposes a working key guard for the aggregate catalog", () => {
     expect(isPermissionKey("roles.manage")).toBe(true);
     expect(isPermissionKey("roles.assign_owner")).toBe(true);
     expect(isPermissionKey("roles.delete")).toBe(false);
+    for (const key of permissionKeys) expect(isPermissionKey(key)).toBe(true);
+  });
+
+  it("aggregates module descriptors into the catalog and system role bundles", () => {
+    const moduleDescriptors = permissionCatalog.filter((item) => item.module !== "core");
+    for (const descriptor of moduleDescriptors) {
+      expect(permissionKeySchema.safeParse(descriptor.key).success).toBe(true);
+      expect(systemRolePermissions("owner")).toContain(descriptor.key);
+      expect(systemRolePermissions("admin")).toContain(descriptor.key);
+      expect(systemRolePermissions("member")).not.toContain(descriptor.key);
+    }
   });
 });
 
 describe("system role permission bundles", () => {
-  it("gives Owner every core permission", () => {
-    expect(systemRolePermissions("owner")).toEqual([...corePermissionKeys]);
+  it("gives Owner every aggregated permission", () => {
+    expect(systemRolePermissions("owner")).toEqual([...permissionKeys]);
   });
 
   it("gives Admin everything except Owner assignment", () => {
     expect(systemRolePermissions("admin")).toEqual(
-      corePermissionKeys.filter((key) => key !== "roles.assign_owner"),
+      permissionKeys.filter((key) => key !== "roles.assign_owner"),
     );
   });
 
@@ -48,7 +67,7 @@ describe("system role permission bundles", () => {
   });
 
   it("removes an over-granted Owner permission from Admin but keeps it on Owner", () => {
-    const overGranted = [...corePermissionKeys];
+    const overGranted = [...permissionKeys];
     const adminDiff = systemRolePermissionDiff("admin", overGranted);
     expect(adminDiff.toAdd).toEqual([]);
     expect(adminDiff.toRemove).toEqual(["roles.assign_owner"]);

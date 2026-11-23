@@ -6,9 +6,9 @@ import { PermissionDeniedError, requirePermission } from "@/core/auth/dal";
 import type { AuditActor } from "@/core/audit";
 import { logger } from "@/core/logging/logger";
 import {
-  corePermissionKeys,
   isCustomRolePermissionKey,
   ownerAssignmentPermissionKey,
+  permissionKeySchema,
   type PermissionKey,
 } from "@/core/rbac/permissions";
 import { assignRole, createRole, deleteRole, unassignRole, updateRole } from "@/core/rbac/service";
@@ -70,26 +70,6 @@ function failureMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function knownPermissionKeySet(): Set<string> {
-  const catalog: unknown = corePermissionKeys;
-  if (Array.isArray(catalog)) {
-    return new Set(catalog.filter((item): item is string => typeof item === "string"));
-  }
-  if (catalog instanceof Set) {
-    return new Set(Array.from(catalog).filter((item): item is string => typeof item === "string"));
-  }
-  if (typeof catalog === "object" && catalog !== null) {
-    return new Set(
-      Object.values(catalog as Record<string, unknown>).filter(
-        (item): item is string => typeof item === "string",
-      ),
-    );
-  }
-  return new Set();
-}
-
-const knownPermissions = knownPermissionKeySet();
-
 const slugSchema = z
   .string()
   .trim()
@@ -104,7 +84,7 @@ const descriptionSchema = z.string().trim().max(500).optional().default("");
 const permissionListSchema = z
   .array(z.string().min(1))
   .refine(
-    (keys) => knownPermissions.size === 0 || keys.every((key) => knownPermissions.has(key)),
+    (keys) => keys.every((key) => permissionKeySchema.safeParse(key).success),
     "Unknown permission key.",
   )
   .refine((keys) => keys.every(isCustomRolePermissionKey), INVALID_INPUT);

@@ -165,7 +165,7 @@
     },
     "version": "Version",
     "environment": "Environnement",
-    "summaryTitle": "Résumé du jalon 3",
+    "summaryTitle": "Résumé du jalon 4",
     "summarySubtitle": "État réel de l'espace de travail, issu des paramètres et du service d'autorisations.",
     "plan": "Forfait effectif",
     "siteName": "Nom du site",
@@ -173,6 +173,9 @@
     "auditRetention": "Conservation des audits",
     "forever": "Indéfiniment",
     "days": "{days} jours",
+    "modulesInstalled": "Modules installés",
+    "modulesEnabled": "Modules activés",
+    "modulesAvailable": "Modules disponibles",
     "locales": {
       "en": "Anglais",
       "fr": "Français",
@@ -421,6 +424,82 @@
       "noValues": "Les valeurs sont volontairement masquées ici ; seul l'état de configuration est affiché."
     },
     "viewOnly": "Lecture seule"
+  },
+  "modules": {
+    "title": "Boutique de modules",
+    "subtitle": "Découvrez les modules intégrés, gérez leur cycle de vie et configurez les fonctionnalités activées.",
+    "navLabel": "Modules",
+    "filters": {
+      "title": "Rechercher un module",
+      "queryLabel": "Rechercher par nom ou description",
+      "queryPlaceholder": "Nom ou description",
+      "stateLabel": "État",
+      "stateAll": "Tous les états",
+      "submit": "Appliquer les filtres",
+      "reset": "Effacer les filtres"
+    },
+    "columns": {
+      "module": "Module",
+      "version": "Version",
+      "state": "État",
+      "plan": "Forfait ou autorisation requis",
+      "dependencies": "Dépendances"
+    },
+    "states": {
+      "available": "Disponible",
+      "installed": "Installé",
+      "enabled": "Activé",
+      "disabled": "Désactivé"
+    },
+    "entitlements": {
+      "store": "Boutique de modules",
+      "premium": "Modules premium"
+    },
+    "lifecycle": {
+      "install": "Installer",
+      "enable": "Activer",
+      "disable": "Désactiver",
+      "configure": "Configurer",
+      "uninstall": "Désinstaller",
+      "keepData": "Désinstaller et conserver les données",
+      "deleteData": "Désinstaller et supprimer les données"
+    },
+    "confirm": {
+      "title": "Confirmer la suppression définitive",
+      "body": "La suppression des données du module est irréversible.",
+      "typedHint": "Saisissez exactement {moduleId} pour confirmer.",
+      "mismatch": "La confirmation ne correspond pas à l'identifiant du module."
+    },
+    "typedConfirmLabel": "Saisissez l'identifiant du module pour confirmer",
+    "deleteDataLabel": "Supprimer les données du module",
+    "keepDataLabel": "Conserver les données du module",
+    "locked": "Verrouillé par le forfait",
+    "lockedHint": "Mettez à niveau votre forfait pour gérer ce module.",
+    "planRequired": "Nécessite {plan}",
+    "dependenciesRequired": "Nécessite : {modules}",
+    "dependentsBlocked": "D'autres modules activés dépendent de ce module.",
+    "notFound": "Module introuvable.",
+    "noModules": "Aucun module n'est intégré dans cette version.",
+    "noResults": "Aucun module ne correspond à ces filtres.",
+    "noDescription": "Aucune description fournie.",
+    "noDependencies": "Aucune",
+    "noRequirement": "Aucun forfait requis",
+    "unknownVersion": "Inconnue",
+    "dataRetained": "Données conservées",
+    "manageRequired": "Vous pouvez voir les modules, mais n'avez pas la permission de les modifier.",
+    "installed": "Module installé.",
+    "enabled": "Module activé.",
+    "disabled": "Module désactivé.",
+    "uninstalled": "Module désinstallé.",
+    "settingsTitle": "Paramètres du module",
+    "settingsHint": "Les champs sont générés à partir du schéma de paramètres validé du module.",
+    "settingsSave": "Enregistrer les modifications",
+    "settingsSaved": "Paramètres du module enregistrés.",
+    "settingsBack": "Retour aux modules",
+    "settingsReadOnly": "Vous n'avez pas la permission de modifier les paramètres du module.",
+    "actionError": "L'action sur le module n'a pas pu être effectuée.",
+    "fieldFallback": "{key}",
+    "fieldDescriptionFallback": "Valeur de configuration pour {key}."
   },
   "license": {
     "title": "Licence et autorisations",

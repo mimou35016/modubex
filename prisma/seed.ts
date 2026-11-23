@@ -2,7 +2,8 @@ import { env } from "../src/core/config/env";
 import { logger } from "../src/core/logging/logger";
 import {
   isSystemRoleKey,
-  permissionCatalog,
+  permissionDescriptor,
+  permissionKeys,
   type SystemRoleKey,
 } from "../src/core/rbac/permissions";
 import { syncSystemRolePermissions } from "../src/core/rbac/service";
@@ -65,14 +66,17 @@ async function ensureOwnerUser(email: string): Promise<string> {
 /** Idempotent catalog, system-role, and assignment synchronization. */
 async function syncRbac(ownerUserId: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    for (const permission of permissionCatalog) {
+    // Aggregated catalog: core keys plus every bundled module's prefixed keys.
+    for (const key of permissionKeys) {
+      const descriptor = permissionDescriptor(key);
+      if (!descriptor) continue;
       await tx.permission.upsert({
-        where: { key: permission.key },
-        update: { description: permission.description, module: permission.module },
+        where: { key },
+        update: { description: descriptor.description, module: descriptor.module },
         create: {
-          key: permission.key,
-          description: permission.description,
-          module: permission.module,
+          key,
+          description: descriptor.description,
+          module: descriptor.module,
         },
       });
     }
@@ -150,7 +154,10 @@ async function syncRbac(ownerUserId: string): Promise<void> {
     });
   });
 
-  logger.info("RBAC catalog and system roles synced", { milestone: "M2" });
+  logger.info("RBAC catalog and system roles synced", {
+    milestone: "M4",
+    permissionCount: permissionKeys.length,
+  });
 }
 
 /** Seeds the single license snapshot once; existing rows are never changed. */

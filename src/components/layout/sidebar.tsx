@@ -35,10 +35,9 @@ export async function Sidebar({
   tagline,
 }: Props) {
   const t = await getTranslations("nav");
-  const planned = [
-    { icon: Blocks, label: t("areas.store"), milestone: "M4" },
-    { icon: UserRound, label: t("areas.profile"), milestone: "M5" },
-  ];
+  const tModules = await getTranslations("modules");
+  const planned = [{ icon: UserRound, label: t("areas.profile"), milestone: "M5" }];
+  const canSeeModules = hasPermission(permissions, "modules.read");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
   const canInvite = hasPermission(permissions, "users.invite");
@@ -77,11 +76,22 @@ export async function Sidebar({
           </NavLink>
         ) : null}
 
-        {canSeeUsers || canSeeRoles || canSeeAudit || canSeeLicense || canSeeSettings ? (
+        {canSeeModules ||
+        canSeeUsers ||
+        canSeeRoles ||
+        canSeeAudit ||
+        canSeeLicense ||
+        canSeeSettings ? (
           <>
             <p className="mt-8 px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
               {t("manage")}
             </p>
+            {canSeeModules ? (
+              <NavLink href="/modules" className={linkClass} activeClassName={activeClass}>
+                <Blocks className="size-4" aria-hidden="true" />
+                {tModules("navLabel")}
+              </NavLink>
+            ) : null}
             {canSeeUsers ? (
               <NavLink href="/users" className={linkClass} activeClassName={activeClass}>
                 <Users className="size-4" aria-hidden="true" />

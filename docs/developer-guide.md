@@ -1,6 +1,6 @@
-# Developer guide (M2–M3 seams)
+# Developer guide (M2–M4 seams)
 
-M2 adds permission checks, user/role management, and the full audit surface; M3 adds runtime settings and the entitlement/licensing foundation. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, [`licensing.md`](licensing.md) covers plans and entitlements, [`settings.md`](settings.md) covers runtime configuration, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
+M2 adds permission checks, user/role management, and the full audit surface; M3 adds runtime settings and the entitlement/licensing foundation; M4 adds build-time bundled modules, the generated module registry, and the in-app module store. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, [`licensing.md`](licensing.md) covers plans and entitlements, [`settings.md`](settings.md) covers runtime configuration, [`modules.md`](modules.md) is the module authoring guide, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
 
 ## File layout
 
@@ -12,12 +12,15 @@ M2 adds permission checks, user/role management, and the full audit surface; M3 
 | `src/core/audit/`                                                                                                  | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`.                      |
 | `src/core/entitlements/{plans,service,guards,schema}.ts`                                                           | Plan mapping, the single `getEntitlements()` seam, guards, and the license form schema.                                                                 |
 | `src/core/settings/{registry,service}.ts`                                                                          | Editable key descriptors, zod schemas, env-derived defaults, cached snapshot, and audited transactional updates.                                        |
+| `src/core/modules/` and `src/modules/<id>/`                                                                        | Module manifest schema, generated registry helpers, lifecycle service/actions, and bundled module code (routes, settings, messages, cleanup hook).      |
+| `src/modules/registry.generated.ts`                                                                                | Committed, generated list of bundled modules and their manifest metadata; produced by `npm run modules:generate`.                                       |
 | `src/app/actions/license.ts`                                                                                       | `license.manage`-guarded, zod-validated, audited license update.                                                                                        |
 | `src/app/actions/settings.ts`                                                                                      | `settings.update`-guarded, entitlement-aware, zod-validated settings update.                                                                            |
 | `src/app/(app)/settings/` and `src/app/(app)/_components/settings/`                                                | Settings pages and forms, including read-only infrastructure and Pro+ advanced performance.                                                             |
 | `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx`                                                | User list and detail pages.                                                                                                                             |
 | `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx`                                                     | Role management and audit viewer pages.                                                                                                                 |
-| `src/app/actions/`                                                                                                 | Server actions for user, role, audit export, and purge mutations.                                                                                       |
+| `src/app/(app)/modules/`                                                                                           | Module store, generated module settings, and the generic bundled-route runner.                                                                          |
+| `src/app/actions/`                                                                                                 | Server actions for user, role, audit export, purge, license, settings, and module lifecycle mutations.                                                  |
 | `src/app/api/audit/`                                                                                               | CSV export handler(s), guarded on `audit.export`.                                                                                                       |
 | `prisma/schema.prisma`, `prisma/migrations/<timestamp>_rbac/`, `prisma/migrations/<timestamp>_invitation_role_id/` | `Role`, `Permission`, `RolePermission`, `UserRole` (all with `workspaceId` default `""`), audit changes, and the invitation `roleId` relation/backfill. |
 | `src/core/i18n/messages/{en,fr,ar}.json`, `tests/`                                                                 | New UI messages (core parity is mandatory) and RBAC/audit tests.                                                                                        |
@@ -28,7 +31,7 @@ M2 adds permission checks, user/role management, and the full audit surface; M3 
 
 ## Adding a new permission
 
-1. Add the key and a short meaning to the catalog in `src/core/rbac/permissions.ts`. Module keys must use the module-id prefix and are aggregated at build time in M4.
+1. Add the key and a short meaning to the catalog in `src/core/rbac/permissions.ts`. Module keys use the `<module-id>.` prefix and are aggregated from manifests by the generated module registry (see [`modules.md`](modules.md#permissions)).
 2. Decide system-role membership. Owner receives every catalog key automatically; Admin receives all keys except `roles.assign_owner`; custom roles can include any key except `roles.assign_owner`.
 3. Generate and apply a migration that upserts the corresponding `Permission` row — the code catalog remains authoritative, the row exists for relational joins.
 4. Add `en`, `fr`, and `ar` messages for any new UI label; `npm run i18n:check` fails CI on missing core keys.
@@ -109,7 +112,7 @@ export default async function AdvancedPage() {
 ```
 
 ```ts
-// M4: mandatory before every module install or enable action
+// Mandatory before every module install or enable action
 import { requireModuleInstallEntitlement } from "@/core/entitlements/guards";
 
 await requireModuleInstallEntitlement(); // checks modules.store
@@ -120,6 +123,25 @@ await requireModuleInstallEntitlement(); // checks modules.store
 To add a key: add it to `entitlementKeys` in `plans.ts`, place it in the appropriate cumulative plan arrays, guard every call site, add tests, and document it in [`licensing.md`](licensing.md). `settings.advancedPerformance` is the Pro+ gate for advanced performance tuning; it is unavailable on Free.
 
 `updateLicenseAction` follows the same audit discipline as other mutations: `license.manage`, zod input (`licenseUpdateSchema`), one `prisma.$transaction`, and `audit.log({ ..., client: tx, strict: true })` for `license.plan.changed` / `license.key.updated`. Only plan and key-presence values are snapshotted — never the raw key. After commit, `invalidateEntitlements()` expires the `license` tag with `{ expire: 0 }` and `revalidatePath("/license")` refreshes the page.
+
+## Modules (M4)
+
+Modules are bundled at build time under `src/modules/<id>/` and discovered through the committed `src/modules/registry.generated.ts`. Installation, enablement, configuration, disablement, and uninstall are audited DB state changes on `ModuleInstall`; no code is loaded at runtime. The full manifest reference, naming rules, lifecycle gates, cleanup contract, and invalidation behavior are in [`modules.md`](modules.md).
+
+```bash
+npm run modules:generate   # regenerate src/modules/registry.generated.ts after manifest changes
+npm run modules:check      # fail CI if the committed registry is stale
+```
+
+Authoring checklist:
+
+1. Create `src/modules/<id>/manifest.ts` and **default-export** a `moduleManifestSchema.parse(...)` result; the directory and `manifest.id` must match.
+2. Populate every required field: routes (with optional sidebar metadata), module-prefixed permissions, zod `settingsSchema`, `ownedModels`, `migrations`, `dependencies`, plus optional `requiredPlan`, `requiredEntitlement`, and `messageNamespace`.
+3. Add one default-exported component per route key in `routes/<route-key>.tsx`; the generic runner mounts them at `/modules/run/<id>/[...slug]` and checks module state and permission before rendering. Field labels and route titles come from module messages under `modules.<namespace>`.
+4. Add `messages/en.json` (and ideally `fr`/`ar`) plus an optional default-exported `cleanup.ts` hook for delete-data uninstall. Module message parity is warning-only in `npm run i18n:check`; core parity still fails CI.
+5. Run `npm run modules:generate`, commit the generated registry, and add tests for lifecycle gates, dependency blocking, and uninstall data semantics.
+
+Every lifecycle action requires `modules.manage`; install and enable also call `requireModuleInstallEntitlement()` and check manifest plan/entitlements plus enabled dependencies via `getEntitlements()`. Lifecycle mutations write strict before/after audit entries in one transaction, then expire the `modules` cache tag and refresh store/route paths. Module permissions aggregate into the central RBAC catalog, and module messages merge into next-intl only while the module is enabled, with English fallback and core keys taking precedence.
 
 ## Settings (M3)
 
@@ -180,8 +202,9 @@ npm run test:watch
 npm run typecheck
 npm run lint          # or npm run lint:fix
 npm run format:check  # or npm run format
-npm run i18n:check    # core keys must exist in en/fr/ar
+npm run i18n:check    # core keys must exist in en/fr/ar; module keys warn only
+npm run modules:check # committed module registry must be fresh
 npm run build
 ```
 
-CI order is `typecheck → lint → test → i18n:check → build`. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads. For entitlements, test plan mapping (cumulative keys and `settings.advancedPerformance`), `normalizePlan()` fallbacks, guard denials, and that a license mutation audits plan/key-presence changes without the raw key and invalidates the `license` tag. For settings, test registry defaults and validation, direct reads when caching is off, create-only seeding, and the update transaction's audit and cache invalidation.
+CI order is `typecheck → lint → test → i18n:check → build`, with `npm run modules:check` also failing on a stale registry. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads. For entitlements, test plan mapping (cumulative keys and `settings.advancedPerformance`), `normalizePlan()` fallbacks, guard denials, and that a license mutation audits plan/key-presence changes without the raw key and invalidates the `license` tag. For settings, test registry defaults and validation, direct reads when caching is off, create-only seeding, and the update transaction's audit and cache invalidation. For modules, test manifest validation, generated-registry freshness, lifecycle permission/entitlement/dependency gates, disabled dependents blocking disable/uninstall, both uninstall data paths, and cache invalidation of permissions and messages.

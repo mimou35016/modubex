@@ -8,10 +8,16 @@ export {
   permissionCatalog,
   permissionDescriptor,
   permissionKeySchema,
+  permissionKeys,
   systemRoleKeys,
   systemRolePermissions,
 } from "./permissions";
-export type { PermissionDescriptor, PermissionKey, SystemRoleKey } from "./permissions";
+export type {
+  CorePermissionKey,
+  PermissionDescriptor,
+  PermissionKey,
+  SystemRoleKey,
+} from "./permissions";
 export {
   assertNotLastOwnerRemoval,
   assignRole,

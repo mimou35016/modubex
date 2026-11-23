@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell
       version={version}
-      currentMilestone="M3"
+      currentMilestone="M4"
       user={user}
       permissions={[...permissionKeys]}
       appName={appName}
