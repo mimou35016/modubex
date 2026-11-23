@@ -4,22 +4,22 @@ M2 adds permission checks, user/role management, and the full audit surface. Thi
 
 ## File layout
 
-| Path | Responsibility |
-| --- | --- |
-| `src/core/rbac/permissions.ts` | Zod-validated permission catalog, `PermissionKey` type, system role bundles. Single source of truth for keys. |
-| `src/core/rbac/service.ts` | DB-backed role/permission queries, effective-permission resolution, custom role mutations, last-owner invariant. |
-| `src/core/auth/dal.ts` | `getSession`, `requireSession`, `getCurrentUser`, plus `requirePermission` and `requirePagePermission`. |
-| `src/core/audit/` | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`. |
-| `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx` | User list and detail pages. |
-| `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx` | Role management and audit viewer pages. |
-| `src/app/actions/` | Server actions for user, role, audit export, and purge mutations. |
-| `src/app/api/audit/` | CSV export handler(s), guarded on `audit.export`. |
-| `prisma/schema.prisma`, `prisma/migrations/<timestamp>_rbac/` | `Role`, `Permission`, `RolePermission`, `UserRole` (all with `workspaceId` default `""`) and audit changes. |
-| `src/core/i18n/messages/{en,fr,ar}.json`, `tests/` | New UI messages (core parity is mandatory) and RBAC/audit tests. |
+| Path                                                                                                               | Responsibility                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/rbac/permissions.ts`                                                                                     | Zod-validated permission catalog, `PermissionKey` type, system role bundles. Single source of truth for keys.                                           |
+| `src/core/rbac/service.ts`                                                                                         | DB-backed role/permission queries, effective-permission resolution, custom role mutations, last-owner invariant.                                        |
+| `src/core/auth/dal.ts`                                                                                             | `getSession`, `requireSession`, `getCurrentUser`, plus `requirePermission` and `requirePagePermission`.                                                 |
+| `src/core/audit/`                                                                                                  | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`.                      |
+| `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx`                                                | User list and detail pages.                                                                                                                             |
+| `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx`                                                     | Role management and audit viewer pages.                                                                                                                 |
+| `src/app/actions/`                                                                                                 | Server actions for user, role, audit export, and purge mutations.                                                                                       |
+| `src/app/api/audit/`                                                                                               | CSV export handler(s), guarded on `audit.export`.                                                                                                       |
+| `prisma/schema.prisma`, `prisma/migrations/<timestamp>_rbac/`, `prisma/migrations/<timestamp>_invitation_role_id/` | `Role`, `Permission`, `RolePermission`, `UserRole` (all with `workspaceId` default `""`), audit changes, and the invitation `roleId` relation/backfill. |
+| `src/core/i18n/messages/{en,fr,ar}.json`, `tests/`                                                                 | New UI messages (core parity is mandatory) and RBAC/audit tests.                                                                                        |
 
 ## Effective permissions
 
-`src/core/rbac/service.ts` resolves a user's permissions by joining `UserRole → Role → RolePermission → Permission` for the relevant `workspaceId` (default `""`). A user may hold several roles; the effective set is their union. `requireSession()` establishes identity first; the permission guards layer on top. Requests cache the resolved set, and role/permission mutations invalidate the cache so changes apply on the next request.
+`src/core/rbac/service.ts` resolves a user's permissions by joining `UserRole → Role → RolePermission → Permission` for the relevant `workspaceId` (default `""`). A user may hold several roles; the effective set is their union. `requireSession()` establishes identity first; the permission guards layer on top. Requests cache the resolved set, and role/permission mutations invalidate the cache so changes apply on the next request. Invitation acceptance calls Better Auth `signUpEmail` first (with a compensating delete on failure), then writes the `UserRole` assignment, invitation consumption, and audit entries inside the Prisma transaction. The legacy `User.role` mirror is written only for users with no existing `UserRole` rows; no role field is added to the Better Auth session.
 
 ## Adding a new permission
 

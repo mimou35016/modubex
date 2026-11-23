@@ -6,47 +6,49 @@ See [`identity.md`](identity.md) for sign-in/session behavior and [`developer-gu
 
 ## Storage and tenancy
 
-| Model / table | Purpose |
-| --- | --- |
-| `Role` | Named bundle of permissions. `owner`, `admin`, and `member` are system roles; others are custom. |
-| `Permission` | Persisted mirror of a code-defined catalog key (description, key). Code is the source of truth. |
-| `RolePermission` | Join from role to permission. |
-| `UserRole` | Join from user to role; a user may hold more than one role, so effective permissions are the union. |
+| Model / table    | Purpose                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `Role`           | Named bundle of permissions. `owner`, `admin`, and `member` are system roles; others are custom.    |
+| `Permission`     | Persisted mirror of a code-defined catalog key (description, key). Code is the source of truth.     |
+| `RolePermission` | Join from role to permission.                                                                       |
+| `UserRole`       | Join from user to role; a user may hold more than one role, so effective permissions are the union. |
 
 All four tables carry `workspaceId`, defaulting to `""` for the single-tenant deployment. Guards accept an optional workspace scope, so a future workspace module can add scoping without rewriting core tables or permission logic. There are no per-user permission overrides or resource-level rules in v1 (PRD §2, §8).
+
+`Invitation` stores the selected `Role.id` (plus a mirrored legacy role key and its own `workspaceId`). Acceptance creates the account through Better Auth first (with a compensating delete on failure); the `UserRole` assignment, token consumption, and audit writes then commit in one transaction. The legacy `User.role` mirror is only stamped for an account that has no existing roles, so a multi-role user's more privileged mirror is preserved. Effective permissions are read from `UserRole → Role → RolePermission → Permission` per request, not from a role field on the Better Auth session.
 
 ## Permission catalog
 
 The catalog is defined and zod-validated in `src/core/rbac/permissions.ts`. Unknown keys are rejected; keys are stable strings and are referenced by guards, seeds, role bundles, and module manifests.
 
-| Key | Meaning |
-| --- | --- |
-| `app.access` | Base access to session-protected `(app)` pages. Held by Member and by custom roles built for end users. |
-| `users.read` | List users and open the profile on `/users/[id]`. Active sessions are a separate key. |
-| `users.invite` | Create an invitation and choose the initial role for the invitee. |
-| `users.update` | Edit user details, activate / deactivate accounts, change a user's role (except Owner), and revoke sessions. |
-| `users.sessions.read` | View the active sessions on `/users/[id]`. |
-| `roles.read` | View roles, the permission catalog, and role assignments. |
-| `roles.manage` | Create, rename, edit the permission bundle of, and delete custom roles. |
-| `roles.assign_owner` | Grant the Owner system role. Reserved for the Owner bundle; custom roles cannot include it. |
-| `audit.read` | View and filter the audit log. |
-| `audit.export` | Export filtered audit entries to CSV. |
-| `audit.manage` | Run the retention purge. |
-| `settings.read`, `settings.update` | Reserved for M3 settings pages. Defined in the catalog now; no M2 UI or guard. |
-| `license.read`, `license.manage` | Reserved for M3 license and entitlements. Defined in the catalog now; no M2 UI or guard. |
-| `modules.read`, `modules.manage` | Reserved for M4 store and module management. Defined now; M4 adds module-prefixed keys from manifests. |
+| Key                                | Meaning                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `app.access`                       | Base access to session-protected `(app)` pages. Held by Member and by custom roles built for end users.      |
+| `users.read`                       | List users and open the profile on `/users/[id]`. Active sessions are a separate key.                        |
+| `users.invite`                     | Create an invitation and choose the initial role for the invitee.                                            |
+| `users.update`                     | Edit user details, activate / deactivate accounts, change a user's role (except Owner), and revoke sessions. |
+| `users.sessions.read`              | View the active sessions on `/users/[id]`.                                                                   |
+| `roles.read`                       | View roles, the permission catalog, and role assignments.                                                    |
+| `roles.manage`                     | Create, rename, edit the permission bundle of, and delete custom roles.                                      |
+| `roles.assign_owner`               | Grant the Owner system role. Reserved for the Owner bundle; custom roles cannot include it.                  |
+| `audit.read`                       | View and filter the audit log.                                                                               |
+| `audit.export`                     | Export filtered audit entries to CSV.                                                                        |
+| `audit.manage`                     | Run the retention purge.                                                                                     |
+| `settings.read`, `settings.update` | Reserved for M3 settings pages. Defined in the catalog now; no M2 UI or guard.                               |
+| `license.read`, `license.manage`   | Reserved for M3 license and entitlements. Defined in the catalog now; no M2 UI or guard.                     |
+| `modules.read`, `modules.manage`   | Reserved for M4 store and module management. Defined now; M4 adds module-prefixed keys from manifests.       |
 
 Non-Owner role changes are guarded by `users.update`; the retention purge is guarded by `audit.manage`. An Owner automatically receives every catalog key (including reserved ones); Admin receives every key except `roles.assign_owner`.
 
 ## System role bundles
 
-| Role | Permissions | Editable? |
-| --- | --- | --- |
-| Owner | Every key in the catalog, including `roles.assign_owner` | **Locked** — cannot be edited or deleted |
-| Admin | Every key except `roles.assign_owner` | **Locked** — cannot be edited or deleted |
-| Member | `app.access` | **Locked** — cannot be edited or deleted |
+| Role   | Permissions                                              | Editable?                                |
+| ------ | -------------------------------------------------------- | ---------------------------------------- |
+| Owner  | Every key in the catalog, including `roles.assign_owner` | **Locked** — cannot be edited or deleted |
+| Admin  | Every key except `roles.assign_owner`                    | **Locked** — cannot be edited or deleted |
+| Member | `app.access`                                             | **Locked** — cannot be edited or deleted |
 
-Custom roles are created by an admin from any subset of the catalog **except** `roles.assign_owner`; that key must never become reachable through a custom role. System roles are locked in the UI and in the service layer: a direct request to rename, re-bundle, or delete them fails even if it bypasses the UI. `UserRole` assignments to system roles are still manageable, subject to the invariant below.
+Custom roles are created by an admin from any subset of the catalog **except** `roles.assign_owner`; that key must never become reachable through a custom role. The editable forms omit it, the role service and actions reject it, and invitations/assignments check the permissions a role actually grants rather than only its key. System roles are locked in the UI and in the service layer: a direct request to rename, re-bundle, or delete them fails even if it bypasses the UI. `UserRole` assignments to system roles are still manageable, subject to the invariant below.
 
 ### Last-owner invariant
 
@@ -75,19 +77,19 @@ Both check the permission key on the server on every request, including direct r
 
 Actions are dot-namespaced strings. M2 uses:
 
-| Action | Meaning |
-| --- | --- |
-| `auth.sign_in.success`, `auth.sign_in.failed` | Sign-in outcomes from the Better Auth hook (retained from M1). |
-| `auth.sign_out` | A session was ended by sign-out. |
-| `auth.invitation.created` | An invitation token was created. |
-| `auth.invitation.accepted` | An invitee accepted an invitation token. |
-| `users.invited` | The user-management side of an invitation (the invitee appears in the user list). |
-| `users.activated`, `users.deactivated` | Account status changes. |
-| `users.role.changed` | A user's role assignment changed, including Owner grants (role key in metadata). |
-| `users.session.revoked` | An active user session was revoked. |
-| `roles.created`, `roles.updated`, `roles.deleted` | Custom role lifecycle. |
-| `audit.exported` | A filtered CSV export was produced. |
-| `audit.purged` | A retention purge ran. |
+| Action                                            | Meaning                                                                           |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `auth.sign_in.success`, `auth.sign_in.failed`     | Sign-in outcomes from the Better Auth hook (retained from M1).                    |
+| `auth.sign_out`                                   | A session was ended by sign-out.                                                  |
+| `auth.invitation.created`                         | An invitation token was created.                                                  |
+| `auth.invitation.accepted`                        | An invitee accepted an invitation token and received its role.                    |
+| `users.invited`                                   | The user-management side of that acceptance (invitee, inviter, and granted role). |
+| `users.activated`, `users.deactivated`            | Account status changes.                                                           |
+| `users.role.changed`                              | A user's role assignment changed, including Owner grants (role key in metadata).  |
+| `users.session.revoked`                           | An active user session was revoked.                                               |
+| `roles.created`, `roles.updated`, `roles.deleted` | Custom role lifecycle.                                                            |
+| `audit.exported`                                  | A filtered CSV export was produced.                                               |
+| `audit.purged`                                    | A retention purge ran.                                                            |
 
 Later milestones add their own actions using the same dot-namespaced convention; module-authored actions use the module id as their prefix.
 

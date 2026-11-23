@@ -1,7 +1,7 @@
 import { LockKeyhole } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requirePagePermission } from "@/core/auth/dal";
-import { permissionCatalog } from "@/core/rbac/permissions";
+import { isCustomRolePermissionKey, permissionCatalog } from "@/core/rbac/permissions";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,9 @@ export default async function RolesPage() {
     description: permission.description ?? "",
     module: permission.module,
   }));
+  // The read-only matrices show the full catalog; editable forms cannot grant
+  // the Owner-only permission.
+  const editableCatalog = catalog.filter((permission) => isCustomRolePermissionKey(permission.key));
 
   const storedRoles = await prisma.role.findMany({
     orderBy: [{ isSystem: "desc" }, { name: "asc" }],
@@ -126,7 +129,7 @@ export default async function RolesPage() {
               {canManage ? (
                 <>
                   <div className="mt-5">
-                    <EditRoleForm role={role} catalog={catalog} />
+                    <EditRoleForm role={role} catalog={editableCatalog} />
                   </div>
                   <DeleteRoleForm role={role} />
                 </>
@@ -137,7 +140,7 @@ export default async function RolesPage() {
         {customRoles.length === 0 ? <p className="text-sm text-muted">{t("noCustom")}</p> : null}
       </section>
 
-      {canManage ? <CreateRoleForm catalog={catalog} /> : null}
+      {canManage ? <CreateRoleForm catalog={editableCatalog} /> : null}
     </div>
   );
 }

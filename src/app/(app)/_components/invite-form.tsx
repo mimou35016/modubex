@@ -11,12 +11,33 @@ import { Label } from "@/components/ui/label";
 import { inviteSchema } from "@/core/auth/schemas";
 import { readActionState } from "../../(auth)/_components/form-utils";
 
-export function InviteForm() {
+export type InviteRole = {
+  id: string;
+  key: string;
+  name: string;
+  isSystem: boolean;
+  description: string | null;
+};
+
+export function InviteForm({
+  roles,
+  canAssignOwner,
+}: {
+  roles: InviteRole[];
+  canAssignOwner: boolean;
+}) {
   const t = useTranslations("auth");
   const [state, formAction, pending] = useActionState(createInvitationAction, {} as ActionState);
   const info = readActionState(state);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("member");
+  const selectableRoles = canAssignOwner ? roles : roles.filter((role) => role.key !== "owner");
+  const [roleId, setRoleId] = useState("");
+  // Derive the submitted value during render: a refresh can remove the Owner
+  // option after `roleId` was chosen, so never submit a stale selection.
+  const effectiveRoleId =
+    roleId && selectableRoles.some((role) => role.id === roleId)
+      ? roleId
+      : (selectableRoles.find((role) => role.key === "member")?.id ?? selectableRoles[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
 
   return (
@@ -46,7 +67,7 @@ export function InviteForm() {
           action={formAction}
           onSubmit={(event) => {
             setError(null);
-            if (!inviteSchema.safeParse({ email, role }).success) {
+            if (!inviteSchema.safeParse({ email, roleId: effectiveRoleId }).success) {
               event.preventDefault();
               setError(t("errors.generic"));
             }
@@ -70,13 +91,16 @@ export function InviteForm() {
             <Label htmlFor="invite-role">{t("invitation.role")}</Label>
             <select
               id="invite-role"
-              name="role"
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
+              name="roleId"
+              value={effectiveRoleId}
+              onChange={(event) => setRoleId(event.target.value)}
               className="h-10 w-full rounded-md border bg-surface px-3 text-sm text-foreground"
             >
-              <option value="member">{t("invitation.roles.member")}</option>
-              <option value="admin">{t("invitation.roles.admin")}</option>
+              {selectableRoles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name} ({role.key})
+                </option>
+              ))}
             </select>
           </div>
           <Button type="submit" disabled={pending}>

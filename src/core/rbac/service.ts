@@ -3,6 +3,7 @@ import { z } from "zod";
 import { audit, auditActions, type AuditActor } from "@/core/audit";
 import { prisma } from "@/lib/prisma";
 import {
+  isCustomRolePermissionKey,
   isSystemRoleKey,
   permissionDescriptor,
   permissionKeySchema,
@@ -31,11 +32,19 @@ const roleKeySchema = z
     "Role keys must be lowercase and dot, dash, or underscore separated",
   );
 
+/** Custom role bundles can never grant the Owner-only permission. */
+const customRolePermissionsSchema = z
+  .array(permissionKeySchema)
+  .refine(
+    (keys) => keys.every(isCustomRolePermissionKey),
+    "Custom roles cannot include the Owner assignment permission",
+  );
+
 const createRoleSchema = z.object({
   key: roleKeySchema,
   name: z.string().min(1).max(120),
   description: z.string().max(500).optional(),
-  permissionKeys: z.array(permissionKeySchema),
+  permissionKeys: customRolePermissionsSchema,
   actor: actorSchema,
 });
 
@@ -43,7 +52,7 @@ const updateRoleSchema = z.object({
   roleId: z.string().min(1),
   name: z.string().min(1).max(120),
   description: z.string().max(500).optional(),
-  permissionKeys: z.array(permissionKeySchema),
+  permissionKeys: customRolePermissionsSchema,
   actor: actorSchema,
 });
 

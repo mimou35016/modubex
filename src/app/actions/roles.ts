@@ -5,13 +5,19 @@ import { z } from "zod";
 import { PermissionDeniedError, requirePermission } from "@/core/auth/dal";
 import type { AuditActor } from "@/core/audit";
 import { logger } from "@/core/logging/logger";
-import { corePermissionKeys, type PermissionKey } from "@/core/rbac/permissions";
+import {
+  corePermissionKeys,
+  isCustomRolePermissionKey,
+  ownerAssignmentPermissionKey,
+  type PermissionKey,
+} from "@/core/rbac/permissions";
 import { assignRole, createRole, deleteRole, unassignRole, updateRole } from "@/core/rbac/service";
 import { prisma } from "@/lib/prisma";
 
 export type ActionState = { error?: string; ok?: boolean; message?: string };
 
 const DENIED = "You do not have permission to perform this action.";
+const INVALID_INPUT = "Invalid input.";
 
 type GuardedSession = Awaited<ReturnType<typeof requirePermission>>["session"];
 
@@ -55,7 +61,7 @@ function repeatedFields(formData: FormData, name: string): string[] {
 }
 
 function firstIssue(error: z.ZodError): string {
-  return error.issues[0]?.message ?? "Invalid input.";
+  return error.issues[0]?.message ?? INVALID_INPUT;
 }
 
 function failureMessage(error: unknown, fallback: string): string {
@@ -100,7 +106,8 @@ const permissionListSchema = z
   .refine(
     (keys) => knownPermissions.size === 0 || keys.every((key) => knownPermissions.has(key)),
     "Unknown permission key.",
-  );
+  )
+  .refine((keys) => keys.every(isCustomRolePermissionKey), INVALID_INPUT);
 
 const createRoleSchema = z.object({
   key: slugSchema,
@@ -129,16 +136,31 @@ function logFailure(message: string, error: unknown): void {
   });
 }
 
+type ResolvedRole = { id: string; key: string; grantsOwnerAssignment: boolean };
+
 /** Accept either a role id or its stable key from the form. */
 async function resolveRole(
   identifier: string,
-): Promise<{ role: { id: string; key: string } | null; error?: string }> {
+): Promise<{ role: ResolvedRole | null; error?: string }> {
   try {
     const role = await prisma.role.findFirst({
       where: { OR: [{ id: identifier }, { key: identifier }] },
-      select: { id: true, key: true },
+      select: {
+        id: true,
+        key: true,
+        permissions: { select: { permission: { select: { key: true } } } },
+      },
     });
-    return { role };
+    if (!role) return { role: null };
+    return {
+      role: {
+        id: role.id,
+        key: role.key,
+        grantsOwnerAssignment: role.permissions.some(
+          (assignment) => assignment.permission.key === ownerAssignmentPermissionKey,
+        ),
+      },
+    };
   } catch (error: unknown) {
     logFailure("Role lookup failed", error);
     return { role: null, error: failureMessage(error, "Unable to look up this role.") };
@@ -257,7 +279,7 @@ export async function assignRoleAction(
   if (!lookup.role) return { error: "Role not found." };
   const role = lookup.role;
 
-  if (role.key === "owner") {
+  if (role.key === "owner" || role.grantsOwnerAssignment) {
     const ownerGuarded = await guard("roles.assign_owner");
     if ("error" in ownerGuarded) return ownerGuarded;
   }
@@ -290,7 +312,7 @@ export async function unassignRoleAction(
   if (!lookup.role) return { error: "Role not found." };
   const role = lookup.role;
 
-  if (role.key === "owner") {
+  if (role.key === "owner" || role.grantsOwnerAssignment) {
     const ownerGuarded = await guard("roles.assign_owner");
     if ("error" in ownerGuarded) return ownerGuarded;
   }

@@ -160,6 +160,7 @@ model Role {
   updatedAt   DateTime         @updatedAt
   permissions RolePermission[]
   users       UserRole[]
+  invitations Invitation[]
 
   @@index([workspaceId])
   @@map("role")
@@ -196,12 +197,17 @@ model Invitation {
   id          String    @id @default(cuid())
   email       String
   token       String    @unique
+  /// Legacy role-key mirror; `roleId` is authoritative.
   role        String    @default("member")
+  roleId      String
+  invitedRole Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  workspaceId String    @default("")
   invitedById String
   expiresAt   DateTime
   acceptedAt  DateTime?
   createdAt   DateTime  @default(now())
 
   @@index([email])
+  @@index([workspaceId])
   @@map("invitation")
 }

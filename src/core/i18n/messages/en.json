@@ -135,11 +135,7 @@
       "acceptTitle": "Join Modubex",
       "acceptSubmit": "Accept and continue",
       "invalidToken": "This invitation link is invalid or has expired.",
-      "acceptLink": "Invitation link",
-      "roles": {
-        "admin": "Admin",
-        "member": "Member"
-      }
+      "acceptLink": "Invitation link"
     },
     "errors": {
       "invalidCredentials": "The email or password is incorrect.",
@@ -178,8 +174,11 @@
     "customRole": "Custom role",
     "ownerAssignmentHint": "Assigning or removing Owner requires the owner assignment permission.",
     "permissionsTitle": "Permission catalog",
-    "permissionsSubtitle": "Permissions registered in this workspace, grouped by module. These checkboxes are read-only.",
+    "permissionsSubtitle": "Permissions registered in this workspace, grouped by resource and action. These checkboxes are read-only.",
     "noPermissions": "No permissions have been registered yet.",
+    "matrix": {
+      "resource": "Resource"
+    },
     "fields": {
       "key": "Key",
       "name": "Name",

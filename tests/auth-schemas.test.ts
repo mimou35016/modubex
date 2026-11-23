@@ -75,8 +75,16 @@ describe("auth schemas", () => {
     expect(twoFactorSchema.safeParse({ code: "123456" }).success).toBe(true);
     expect(twoFactorSchema.safeParse({ code: "12ab56" }).success).toBe(false);
 
-    expect(inviteSchema.parse({ email: "teammate@example.com" }).role).toBe("member");
-    expect(inviteSchema.safeParse({ email: "bad", role: "member" }).success).toBe(false);
+    expect(inviteSchema.parse({ email: "teammate@example.com", roleId: "role_123" }).roleId).toBe(
+      "role_123",
+    );
+    expect(inviteSchema.safeParse({ email: "bad", roleId: "role_123" }).success).toBe(false);
+    expect(inviteSchema.safeParse({ email: "teammate@example.com", role: "member" }).success).toBe(
+      false,
+    );
+    expect(inviteSchema.safeParse({ email: "teammate@example.com", roleId: "" }).success).toBe(
+      false,
+    );
 
     expect(
       acceptInvitationSchema.safeParse({

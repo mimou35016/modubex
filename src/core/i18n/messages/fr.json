@@ -135,11 +135,7 @@
       "acceptTitle": "Rejoindre Modubex",
       "acceptSubmit": "Accepter et continuer",
       "invalidToken": "Ce lien d'invitation est invalide ou a expiré.",
-      "acceptLink": "Lien d'invitation",
-      "roles": {
-        "admin": "Administrateur",
-        "member": "Membre"
-      }
+      "acceptLink": "Lien d'invitation"
     },
     "errors": {
       "invalidCredentials": "L'adresse e-mail ou le mot de passe est incorrect.",
@@ -178,8 +174,11 @@
     "customRole": "Rôle personnalisé",
     "ownerAssignmentHint": "L'attribution ou le retrait du rôle Owner nécessite la permission d'attribution.",
     "permissionsTitle": "Catalogue des permissions",
-    "permissionsSubtitle": "Permissions enregistrées dans cet espace, regroupées par module. Ces cases sont en lecture seule.",
+    "permissionsSubtitle": "Permissions enregistrées dans cet espace, regroupées par ressource et action. Ces cases sont en lecture seule.",
     "noPermissions": "Aucune permission n'a encore été enregistrée.",
+    "matrix": {
+      "resource": "Ressource"
+    },
     "fields": {
       "key": "Clé",
       "name": "Nom",

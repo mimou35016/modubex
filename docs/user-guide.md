@@ -19,7 +19,7 @@ Open **Users** from the sidebar (`/users`) with the `users.read` permission. The
 
 From `/users` you can:
 
-- **Invite a user** (`users.invite`): enter the email and choose the initial role, then submit. The invitation link is created and delivered through the logging callback used in M1/M2 (no mail service until M5.1); in local development, read the link from the server log. The invitee opens `/accept-invitation?token=...`, signs in or signs up if needed, and accepts. An expired or already-used token cannot be accepted. The flow is recorded as `auth.invitation.created`, `auth.invitation.accepted`, and `users.invited`.
+- **Invite a user** (`users.invite`): enter the email and choose the initial role, then submit. The invitation link is created and delivered through the logging callback used in M1/M2 (no mail service until M5.1); in local development, read the link from the server log. The invitee opens `/accept-invitation?token=...` and submits a name and password; the account is created (or an existing email reused), the chosen role is assigned, and the token is consumed. An expired or already-used token cannot be accepted. The role takes effect on the next request without a re-login. Granting Owner is additionally gated by `roles.assign_owner`. The flow is recorded as `auth.invitation.created`, `auth.invitation.accepted`, and `users.invited`.
 - **Deactivate or reactivate an account** (`users.update`): a deactivated user cannot use their session until reactivated. These changes are recorded as `users.deactivated` and `users.activated`.
 - **Change a role** (`users.update`): pick a role from the available roles. The change is recorded as `users.role.changed`. Granting Owner requires `roles.assign_owner` and is therefore Owner-only.
 

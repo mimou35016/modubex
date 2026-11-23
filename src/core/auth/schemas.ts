@@ -65,8 +65,23 @@ export const twoFactorSchema = z.object({
 
 export const inviteSchema = z.object({
   email: z.email(),
-  role: z.enum(["owner", "admin", "member"]).default("member"),
+  roleId: z.string().min(1),
 });
+
+/**
+ * Invitations created before the `roleId` migration only carry the legacy
+ * role key. Prefer the id so role renames cannot change the granted role.
+ */
+export function invitationRoleLookup(invitation: {
+  roleId?: string | null;
+  role?: string | null;
+}): { by: "id"; value: string } | { by: "key"; value: string } | null {
+  const roleId = invitation.roleId?.trim();
+  if (roleId) return { by: "id", value: roleId };
+
+  const roleKey = invitation.role?.trim();
+  return roleKey ? { by: "key", value: roleKey } : null;
+}
 
 export const acceptInvitationSchema = z.object({
   token: z.string().min(1),

@@ -8,22 +8,22 @@ This milestone establishes identity with **Better Auth 1.7.27 (pinned)**. The se
 
 `DATABASE_URL` (already in `.env.example`) is required. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before starting the app. All values are environment-only, read from `.env`/`.env.local`, which are gitignored; never commit real secrets.
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `BETTER_AUTH_SECRET` | Yes | — | Secret used to sign/encrypt cookies and tokens. Use a long random value. |
-| `BETTER_AUTH_URL` | Yes | — | Canonical app URL used for auth callbacks (e.g. `http://localhost:3000`). |
-| `AUTH_PASSWORD_MIN_LENGTH` | No | `12` | Minimum password length. |
-| `AUTH_PASSWORD_MAX_LENGTH` | No | `128` | Maximum password length. |
-| `AUTH_PASSWORD_REQUIRE_NUMBER` | No | `true` | Require at least one digit. |
-| `AUTH_PASSWORD_REQUIRE_SYMBOL` | No | `false` | Require at least one symbol. |
-| `AUTH_REQUIRE_EMAIL_VERIFICATION` | No | `false` | Require email verification before a usable session. |
-| `AUTH_2FA_REQUIRED` | No | `false` | Force TOTP enrollment for users without it. |
-| `AUTH_GITHUB_CLIENT_ID` | No | — | GitHub OAuth client ID; the provider is enabled only when both ID and secret are set. |
-| `AUTH_GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth client secret. |
-| `AUTH_GOOGLE_CLIENT_ID` | No | — | Google OAuth client ID; the provider is enabled only when both ID and secret are set. |
-| `AUTH_GOOGLE_CLIENT_SECRET` | No | — | Google OAuth client secret. |
-| `SEED_OWNER_EMAIL` | No | `owner@modubex.local` | Email of the first Owner created by the seed. |
-| `SEED_OWNER_PASSWORD` | No | `Owner!Local2026#` | Password of the first Owner created by the seed. |
+| Variable                          | Required | Default               | Purpose                                                                               |
+| --------------------------------- | -------- | --------------------- | ------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`              | Yes      | —                     | Secret used to sign/encrypt cookies and tokens. Use a long random value.              |
+| `BETTER_AUTH_URL`                 | Yes      | —                     | Canonical app URL used for auth callbacks (e.g. `http://localhost:3000`).             |
+| `AUTH_PASSWORD_MIN_LENGTH`        | No       | `12`                  | Minimum password length.                                                              |
+| `AUTH_PASSWORD_MAX_LENGTH`        | No       | `128`                 | Maximum password length.                                                              |
+| `AUTH_PASSWORD_REQUIRE_NUMBER`    | No       | `true`                | Require at least one digit.                                                           |
+| `AUTH_PASSWORD_REQUIRE_SYMBOL`    | No       | `false`               | Require at least one symbol.                                                          |
+| `AUTH_REQUIRE_EMAIL_VERIFICATION` | No       | `false`               | Require email verification before a usable session.                                   |
+| `AUTH_2FA_REQUIRED`               | No       | `false`               | Force TOTP enrollment for users without it.                                           |
+| `AUTH_GITHUB_CLIENT_ID`           | No       | —                     | GitHub OAuth client ID; the provider is enabled only when both ID and secret are set. |
+| `AUTH_GITHUB_CLIENT_SECRET`       | No       | —                     | GitHub OAuth client secret.                                                           |
+| `AUTH_GOOGLE_CLIENT_ID`           | No       | —                     | Google OAuth client ID; the provider is enabled only when both ID and secret are set. |
+| `AUTH_GOOGLE_CLIENT_SECRET`       | No       | —                     | Google OAuth client secret.                                                           |
+| `SEED_OWNER_EMAIL`                | No       | `owner@modubex.local` | Email of the first Owner created by the seed.                                         |
+| `SEED_OWNER_PASSWORD`             | No       | `Owner!Local2026#`    | Password of the first Owner created by the seed.                                      |
 
 Boolean variables accept `true`/`false` strings. No OAuth button is rendered for a provider that is not fully configured, so there are no dead buttons.
 
@@ -57,9 +57,9 @@ Invitations use a **custom Invitation model**, not the Better Auth organization 
 
 1. A signed-in user creates an invitation at `/invite` (session-protected, in the `(app)` group).
 2. The invitation produces a tokenized link, delivered through the logging callback described above.
-3. The recipient opens `/accept-invitation?token=...`; if not already signed in, they sign up or sign in first, then accept the token to join the workspace.
+3. The recipient opens `/accept-invitation?token=...` and submits a name and password. Acceptance creates the account through Better Auth when the email is new (or reuses an existing email); that sign-up happens first, with a compensating delete if the later step fails. Role assignment, invitation consumption, and the audit entries are then committed in one transaction — no separate sign-up or sign-in step is needed.
 
-The app is single-tenant by default but the data model remains workspace-scope-ready.
+The invitation stores the selected `Role.id` (with the legacy role key mirrored for compatibility), so custom roles are granted correctly and role key changes do not affect pending invitations. Permissions are derived from `UserRole` rows on every request, so the invitee's access applies immediately after sign-in without a re-login. The app is single-tenant by default but the data model remains workspace-scope-ready.
 
 ## Audit events (M1)
 

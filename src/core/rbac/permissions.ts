@@ -26,6 +26,13 @@ export const corePermissionKeys = [
 
 export type PermissionKey = (typeof corePermissionKeys)[number];
 
+/** Reserved for the Owner bundle; custom role definitions must never include it. */
+export const ownerAssignmentPermissionKey: PermissionKey = "roles.assign_owner";
+
+export function isCustomRolePermissionKey(key: string): boolean {
+  return key !== ownerAssignmentPermissionKey;
+}
+
 export const permissionKeySchema = z.enum(corePermissionKeys);
 
 export type PermissionDescriptor = {
@@ -85,7 +92,7 @@ export type SystemRoleKey = (typeof systemRoleKeys)[number];
 
 const ownerPermissions: readonly PermissionKey[] = corePermissionKeys;
 const adminPermissions: readonly PermissionKey[] = corePermissionKeys.filter(
-  (key): key is PermissionKey => key !== "roles.assign_owner",
+  (key): key is PermissionKey => isCustomRolePermissionKey(key),
 );
 const memberPermissions: readonly PermissionKey[] = ["app.access"];
 
