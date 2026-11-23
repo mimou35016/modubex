@@ -75,7 +75,7 @@ export default async function AuditPage({
     prisma.auditLog.count({ where }),
   ]);
 
-  const retentionDays = getAuditRetention();
+  const retentionDays = await getAuditRetention();
   const retentionLabel =
     retentionDays <= 0 ? t("retentionForever") : t("retentionDays", { days: retentionDays });
   const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });

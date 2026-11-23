@@ -1,11 +1,13 @@
 # AGENTS.md
 
 ## Current state
-- M0 (foundation and quality baseline), M1 (identity & sessions), and M2 (authorization core) are complete. The app shell, CI, lockfile, Prisma baseline, locale registry, theming, Better Auth identity/sessions, TOTP 2FA, invitations, and the Owner seed exist; M2 adds the permission catalog, Role/Permission/RolePermission/UserRole models, `requirePermission`/`requirePagePermission` guards, custom role and user management, last-Owner protection, expanded append-only audit, the audit viewer with CSV export, and retention purge. Modules, settings, entitlements, and their dashboard pages remain unstarted (M3/M4).
+
+- M0 (foundation and quality baseline), M1 (identity & sessions), M2 (authorization core), and M3 (settings & entitlements) are complete. The app shell, CI, lockfile, Prisma baseline, locale registry, theming, Better Auth identity/sessions, TOTP 2FA, invitations, and the Owner seed exist; M2 adds the permission catalog, Role/Permission/RolePermission/UserRole models, `requirePermission`/`requirePagePermission` guards, custom role and user management, last-Owner protection, expanded append-only audit, the audit viewer with CSV export, and retention purge. M3 adds 13 database-backed runtime settings with live invalidation, the single `getEntitlements()` seam and licensing pages, live password/2FA policies, and the settings and license/entitlements dashboard pages; the module store and module installation remain M4.
 - `docs/PRD.md` is the target spec, not a description of current code. `docs/tasks.md` is the milestone plan. If a rule conflicts with executable config, trust the config.
 - `package.json` is the source of truth for available tooling. Do not invent `npm test`-style commands without adding them there.
 
 ## Commands
+
 - `npm run dev` → http://localhost:3000
 - `npm run build` / `npm run start` — production build / serve
 - `npm run typecheck`, `npm run lint` (`lint:fix`), `npm run format` (`format:check`), `npm run test` (`test:watch`)
@@ -14,6 +16,7 @@
 - CI order: `typecheck → lint → test → i18n:check → build`. Run it before a PR.
 
 ## Layout & toolchain quirks
+
 - App Router entrypoints: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`. Alias `@/*` → `./src/*`.
 - Auth pages live outside the dashboard shell: `src/app/(auth)/` for public identity pages, `src/app/(app)/` for session-protected pages; `requireSession()` is the DAL seam gating the latter.
 - Tailwind 4 is CSS-first: styles live in `globals.css`; there is no `tailwind.config.*` or `postcss.config.*`. `next.config.ts` maps `*.css` to `@tailwindcss/turbopack` — preserve it, and keep the `next-intl` plugin wrapper.
@@ -22,6 +25,7 @@
 - `.env*` is gitignored; infrastructure values are env-only and read-only in the UI.
 
 ## PRD rules that constrain implementation
+
 - **Server-enforced security:** every route, server action, and API handler checks permissions (not role names) and entitlements. Better Auth owns identity/sessions; RBAC, licensing, and audit are ours. Zod-validate all inputs, settings, and manifests; no `any` in core.
 - **Modules:** `src/modules/*`, bundled at build time. Install is a DB state change; no runtime code loading. Manifests declare permissions, zod settings schema, Prisma models/migrations, messages, plan tier, dependencies, cleanup hook. Use module prefixes for shared-schema models.
 - **Single entitlement seam:** all checks go through `getEntitlements()`.
@@ -34,6 +38,7 @@
 - **Tenancy:** single-tenant default, but workspace-scope-ready.
 
 ## References
+
 - `docs/PRD.md` — spec of record (v1 scope, data model, acceptance criteria)
 - `docs/tasks.md` — milestone and task plan
 

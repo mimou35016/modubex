@@ -57,7 +57,7 @@ export async function runAuditPurgeAction(
   const actor = await actorFrom(guarded.session);
   try {
     // Zero days means "keep forever"; never run a destructive purge in that case.
-    const retentionDays = getAuditRetention();
+    const retentionDays = await getAuditRetention();
     if (!Number.isFinite(retentionDays) || retentionDays <= 0) return { error: FOREVER_ERROR };
 
     // The core purge writes its own append-only audit entry in the same transaction.

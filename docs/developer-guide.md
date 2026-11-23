@@ -1,6 +1,6 @@
-# Developer guide (M2 seams)
+# Developer guide (M2–M3 seams)
 
-M2 adds permission checks, user/role management, and the full audit surface. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
+M2 adds permission checks, user/role management, and the full audit surface; M3 adds runtime settings and the entitlement/licensing foundation. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, [`licensing.md`](licensing.md) covers plans and entitlements, [`settings.md`](settings.md) covers runtime configuration, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
 
 ## File layout
 
@@ -10,6 +10,11 @@ M2 adds permission checks, user/role management, and the full audit surface. Thi
 | `src/core/rbac/service.ts`                                                                                         | DB-backed role/permission queries, effective-permission resolution, custom role mutations, last-owner invariant.                                        |
 | `src/core/auth/dal.ts`                                                                                             | `getSession`, `requireSession`, `getCurrentUser`, plus `requirePermission` and `requirePagePermission`.                                                 |
 | `src/core/audit/`                                                                                                  | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`.                      |
+| `src/core/entitlements/{plans,service,guards,schema}.ts`                                                           | Plan mapping, the single `getEntitlements()` seam, guards, and the license form schema.                                                                 |
+| `src/core/settings/{registry,service}.ts`                                                                          | Editable key descriptors, zod schemas, env-derived defaults, cached snapshot, and audited transactional updates.                                        |
+| `src/app/actions/license.ts`                                                                                       | `license.manage`-guarded, zod-validated, audited license update.                                                                                        |
+| `src/app/actions/settings.ts`                                                                                      | `settings.update`-guarded, entitlement-aware, zod-validated settings update.                                                                            |
+| `src/app/(app)/settings/` and `src/app/(app)/_components/settings/`                                                | Settings pages and forms, including read-only infrastructure and Pro+ advanced performance.                                                             |
 | `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx`                                                | User list and detail pages.                                                                                                                             |
 | `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx`                                                     | Role management and audit viewer pages.                                                                                                                 |
 | `src/app/actions/`                                                                                                 | Server actions for user, role, audit export, and purge mutations.                                                                                       |
@@ -77,6 +82,62 @@ export async function GET(request: Request) {
 
 `requirePermission` fails with a forbidden error (403) and never performs the mutation; `requirePagePermission` sends unauthorized users to the app's forbidden state instead of rendering the page. Do not check `role === "admin"` in application code — check the key. The UI may hide controls, but the server check is the enforcement point.
 
+## Entitlements (M3)
+
+Entitlements are an additional plan-level gate, not a replacement for RBAC. `src/core/entitlements/service.ts` is the **only** Prisma access point for license state: never query `License` from a page, action, or handler. The plan mapping in `plans.ts` is authoritative; the `entitlements` JSON column is an informational snapshot. Missing, expired, unknown, or failed reads fall back to `free`. With the runtime setting `performance.cacheReads` on, only the plan string is cached under the `license` tag for 300 seconds; `has`/`hasAll` are rebuilt per call. When the setting is off, plan reads go straight to Prisma. `invalidateEntitlements()` calls `revalidateTag("license", { expire: 0 })` after a license mutation so the new plan applies immediately.
+
+```ts
+// Server action or API handler
+import { requirePermission } from "@/core/auth/dal";
+import { requireEntitlement } from "@/core/entitlements/guards";
+
+export async function exportSomething(input: unknown) {
+  await requirePermission("audit.export"); // RBAC: who the caller is
+  await requireEntitlement("audit.export"); // plan: what the plan allows
+  // ...zod-validate input and do the work
+}
+```
+
+```ts
+// React Server Component page
+import { requirePageEntitlement } from "@/core/entitlements/guards";
+
+export default async function AdvancedPage() {
+  await requirePageEntitlement("settings.advancedPerformance"); // redirects to /forbidden
+  // ...render real data
+}
+```
+
+```ts
+// M4: mandatory before every module install or enable action
+import { requireModuleInstallEntitlement } from "@/core/entitlements/guards";
+
+await requireModuleInstallEntitlement(); // checks modules.store
+```
+
+`hasEntitlement()` and `assertEntitlement()` work on an already-resolved snapshot; `requireEntitlement()` returns that snapshot for downstream use. Entitlement and permission checks are independent — a plan key such as `audit.export` does not grant the RBAC permission of the same name. Unauthenticated access is still handled by `requireSession()` / `requirePagePermission()`.
+
+To add a key: add it to `entitlementKeys` in `plans.ts`, place it in the appropriate cumulative plan arrays, guard every call site, add tests, and document it in [`licensing.md`](licensing.md). `settings.advancedPerformance` is the Pro+ gate for advanced performance tuning; it is unavailable on Free.
+
+`updateLicenseAction` follows the same audit discipline as other mutations: `license.manage`, zod input (`licenseUpdateSchema`), one `prisma.$transaction`, and `audit.log({ ..., client: tx, strict: true })` for `license.plan.changed` / `license.key.updated`. Only plan and key-presence values are snapshotted — never the raw key. After commit, `invalidateEntitlements()` expires the `license` tag with `{ expire: 0 }` and `revalidatePath("/license")` refreshes the page.
+
+## Settings (M3)
+
+`src/core/settings/registry.ts` is the single source of truth for the 13 editable keys, their categories, zod schemas, i18n labels, and defaults (env-derived where bootstrap values feed runtime settings, such as password rules and audit retention). `workspace.timeZone` is validated as an IANA name. `infrastructureRegistry` is a separate frozen list of env-backed metadata: it exposes only masked `configured` status and flags for sensitive / restart-required values, never the underlying value.
+
+`src/core/settings/service.ts` reads one snapshot through `unstable_cache` (tag `settings`, 300-second revalidation). Missing, invalid, or unreadable rows fall back to registry defaults and log a warning. With `performance.cacheReads = false`, both settings reads and the entitlement plan read bypass Next cache and query Prisma directly. `ensureDefaultSettings()` is create-only, so re-running `npm run db:seed` preserves edited values.
+
+```ts
+import { getAllSettings, getSettingValue } from "@/core/settings/service";
+
+const values = await getAllSettings();
+const timeZone = await getSettingValue("workspace.timeZone");
+```
+
+`updateSettings(values, actor)` validates every value, writes changed rows in one transaction, writes one `settings.updated` audit entry with before/after maps, then calls `revalidateTag("settings", { expire: 0 })` and revalidates `/settings` and `/audit`. The caller must enforce authorization: `updateSettingsAction` requires `settings.update` and also `settings.advancedPerformance` for `performance.cacheReads` submissions.
+
+To add a key: add its schema, descriptor, and default to the registry; add `en` / `fr` / `ar` messages; wire it into the relevant settings page; guard any new entitlement; and document it in [`settings.md`](settings.md). Existing databases can rely on the registry default until an edit upserts the row.
+
 ## Writing audit entries
 
 ```ts
@@ -109,7 +170,7 @@ npm run db:deploy     # apply migrations in production
 npm run db:seed       # idempotent: Owner user, system roles, catalog rows, assignments
 ```
 
-The seed upserts rather than duplicates: it does not create a second Owner, and it assigns the Owner through `UserRole` (not the legacy `User.role` string). In M2, retention comes from `AUDIT_RETENTION_DAYS` (`0` = keep forever); M3 moves it into a validated runtime Setting. Infrastructure values stay env-only and read-only in the UI.
+The seed upserts rather than duplicates: it does not create a second Owner, and it assigns the Owner through `UserRole` (not the legacy `User.role` string). It also creates the single Pro-plan `License` row and the default settings rows if absent; settings seeding is create-only and never overwrites edits. `AUDIT_RETENTION_DAYS` is now only the bootstrap default for the validated runtime setting `audit.retentionDays` (`0` = keep forever). Infrastructure values stay env-only and read-only in the UI.
 
 ## Tests and quality gates
 
@@ -123,4 +184,4 @@ npm run i18n:check    # core keys must exist in en/fr/ar
 npm run build
 ```
 
-CI order is `typecheck → lint → test → i18n:check → build`. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads.
+CI order is `typecheck → lint → test → i18n:check → build`. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads. For entitlements, test plan mapping (cumulative keys and `settings.advancedPerformance`), `normalizePlan()` fallbacks, guard denials, and that a license mutation audits plan/key-presence changes without the raw key and invalidates the `license` tag. For settings, test registry defaults and validation, direct reads when caching is off, create-only seeding, and the update transaction's audit and cache invalidation.

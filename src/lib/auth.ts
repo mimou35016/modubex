@@ -5,10 +5,15 @@ import { betterAuth } from "better-auth/minimal";
 import { admin, twoFactor } from "better-auth/plugins";
 import { z } from "zod";
 import { audit } from "@/core/audit";
-import { passwordSchema } from "@/core/auth/schemas";
+import { configurePasswordRulesResolver, validatePasswordWithSettings } from "@/core/auth/schemas";
 import { env } from "@/core/config/env";
 import { logger } from "@/core/logging/logger";
+import { getPasswordRules } from "@/core/settings/service";
 import { prisma } from "@/lib/prisma";
+
+// Server-only wiring: validation uses live DB settings while client schemas
+// keep the static env bootstrap rules.
+configurePasswordRulesResolver(getPasswordRules);
 
 const deliverySchema = z.object({
   user: z.object({ id: z.string(), email: z.string() }),
@@ -69,8 +74,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: env.AUTH_REQUIRE_EMAIL_VERIFICATION,
-    minPasswordLength: env.AUTH_PASSWORD_MIN_LENGTH,
-    maxPasswordLength: env.AUTH_PASSWORD_MAX_LENGTH,
+    // The live policy is enforced in hooks.before; keep Better Auth's range wide.
+    minPasswordLength: 1,
+    maxPasswordLength: 256,
     sendResetPassword: async (data) => {
       logDelivery("password-reset", data);
     },
@@ -131,7 +137,7 @@ export const auth = betterAuth({
       const password = body.success ? (body.data.password ?? body.data.newPassword) : undefined;
       if (password === undefined) return;
 
-      const result = passwordSchema.safeParse(password);
+      const result = await validatePasswordWithSettings(password);
       if (!result.success) {
         throw new APIError("BAD_REQUEST", {
           message: result.error.issues[0]?.message ?? "Invalid password.",

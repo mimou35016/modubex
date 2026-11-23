@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   acceptInvitationSchema,
+  buildPasswordSchema,
+  configurePasswordRulesResolver,
   inviteSchema,
   passwordRules,
   passwordSchema,
@@ -8,7 +10,12 @@ import {
   signInSchema,
   signUpSchema,
   twoFactorSchema,
+  validatePasswordWithSettings,
 } from "@/core/auth/schemas";
+
+afterEach(() => {
+  configurePasswordRulesResolver(async () => passwordRules);
+});
 
 function validPassword(): string {
   const prefix = "a".repeat(Math.max(0, passwordRules.minLength - 2));
@@ -100,5 +107,35 @@ describe("auth schemas", () => {
         password: "short",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("buildPasswordSchema", () => {
+  it("applies an explicit rule set without reading settings", () => {
+    const schema = buildPasswordSchema({
+      minLength: 8,
+      maxLength: 10,
+      requireNumber: true,
+      requireSymbol: true,
+    });
+
+    expect(schema.safeParse("Abcdef1!").success).toBe(true);
+    expect(schema.safeParse("Abcdefg!").success).toBe(false);
+    expect(schema.safeParse("Abcdefg1").success).toBe(false);
+    expect(schema.safeParse("Ab1!").success).toBe(false);
+    expect(schema.safeParse("Abcdefg1!xy").success).toBe(false);
+  });
+
+  it("validates through the configured live settings resolver", async () => {
+    configurePasswordRulesResolver(async () => ({
+      minLength: 16,
+      maxLength: 20,
+      requireNumber: false,
+      requireSymbol: false,
+    }));
+
+    expect((await validatePasswordWithSettings("a".repeat(15))).success).toBe(false);
+    expect((await validatePasswordWithSettings("a".repeat(16))).success).toBe(true);
+    expect((await validatePasswordWithSettings("a".repeat(21))).success).toBe(false);
   });
 });

@@ -68,8 +68,8 @@
       "haveAccount": "Already have an account?",
       "passwordHelp": "Your password must meet these requirements:",
       "rules": {
-        "minLength": "At least 12 characters",
-        "maxLength": "At most 128 characters",
+        "minLength": "At least {min} characters",
+        "maxLength": "At most {max} characters",
         "number": "At least one number",
         "symbol": "At least one symbol",
         "lowercase": "At least one lowercase letter",
@@ -86,7 +86,8 @@
       "title": "Choose a new password",
       "submit": "Save new password",
       "success": "Your password has been reset. You can sign in now.",
-      "missingToken": "This reset link is invalid or has expired."
+      "missingToken": "This reset link is invalid or has expired.",
+      "passwordHelp": "Your password must meet these requirements:"
     },
     "verify": {
       "title": "Verify your email",
@@ -162,10 +163,21 @@
       "ready": "Ready",
       "pending": "Pending"
     },
-    "nextTitle": "Next up: authorization core",
-    "nextBody": "Milestone 2 adds the permission catalog, RBAC guards, role management, and the audit viewer.",
     "version": "Version",
-    "environment": "Environment"
+    "environment": "Environment",
+    "summaryTitle": "Milestone 3 summary",
+    "summarySubtitle": "Live workspace state from settings and the entitlement seam.",
+    "plan": "Effective plan",
+    "siteName": "Site name",
+    "defaultLocale": "Default locale",
+    "auditRetention": "Audit retention",
+    "forever": "Forever",
+    "days": "{days} days",
+    "locales": {
+      "en": "English",
+      "fr": "French",
+      "ar": "Arabic"
+    }
   },
   "rbac": {
     "title": "Roles and permissions",
@@ -295,5 +307,171 @@
     "title": "Access denied",
     "body": "You do not have permission to view this page. Ask an administrator if you believe this is a mistake.",
     "back": "Back to overview"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Runtime settings are validated and applied immediately. Environment-only values are read-only.",
+    "navLabel": "Settings sections",
+    "tabs": {
+      "site": "Site",
+      "seo": "SEO",
+      "performance": "Performance",
+      "localization": "Localization",
+      "security": "Security",
+      "audit": "Audit retention",
+      "workspace": "Workspace",
+      "infrastructure": "Infrastructure"
+    },
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "save": "Save changes",
+    "saved": "Settings saved.",
+    "readOnly": "You can view settings but do not have permission to change them.",
+    "restartRequired": "Requires restart",
+    "sensitive": "Sensitive",
+    "configured": "Configured",
+    "notConfigured": "Not configured",
+    "set": "Set",
+    "notSet": "Not set",
+    "fields": {
+      "site": {
+        "name": "Site name",
+        "tagline": "Tagline"
+      },
+      "seo": {
+        "description": "Meta description",
+        "titleSuffix": "Title suffix"
+      },
+      "performance": {
+        "cacheReads": "Cached settings and entitlement reads",
+        "cacheReadsDescription": "When disabled, reads go directly to Prisma."
+      },
+      "localization": {
+        "defaultLocale": "Default locale"
+      },
+      "security": {
+        "passwordMinLength": "Minimum password length",
+        "passwordMaxLength": "Maximum password length",
+        "requireNumber": "Require a number",
+        "requireSymbol": "Require a symbol",
+        "requireTwoFactor": "Require two-factor authentication",
+        "requireTwoFactorDescription": "Members without 2FA will be redirected to enrollment."
+      },
+      "audit": {
+        "retentionDays": "Retention period (days)"
+      },
+      "workspace": {
+        "timeZone": "Workspace time zone"
+      },
+      "infrastructure": {
+        "databaseUrl": "Database connection",
+        "authUrl": "Auth base URL",
+        "authSecret": "Auth secret",
+        "passwordMinBootstrap": "Bootstrap password minimum",
+        "auditRetentionBootstrap": "Bootstrap audit retention"
+      }
+    },
+    "site": {
+      "title": "Site identity",
+      "subtitle": "Branding shown across the app shell and metadata."
+    },
+    "seo": {
+      "title": "SEO metadata",
+      "subtitle": "Defaults used when a page does not set its own metadata."
+    },
+    "performance": {
+      "title": "Performance",
+      "subtitle": "Control how settings and entitlements are read.",
+      "statusTitle": "Cache reads",
+      "statusEnabled": "Next.js cache reads are enabled.",
+      "statusDisabled": "Direct database reads are enabled.",
+      "explanation": "Runtime settings use the {tag} cache tag and a {seconds}-second revalidate window. A settings change expires the tag immediately.",
+      "advancedLink": "Advanced performance settings",
+      "advancedTitle": "Advanced performance tuning",
+      "advancedHint": "Turning cached reads off bypasses the Next.js cache and queries Prisma directly for every settings and entitlement read."
+    },
+    "localization": {
+      "title": "Localization",
+      "defaultLocaleHint": "This locale is the fallback when no valid NEXT_LOCALE cookie exists. A user-selected locale always wins.",
+      "locales": {
+        "en": "English",
+        "fr": "French",
+        "ar": "Arabic"
+      }
+    },
+    "security": {
+      "title": "Security policy",
+      "liveTitle": "Live policy",
+      "liveNote": "Sign-up and password reset use these values on the next request: {min} to {max} characters, number {number}, symbol {symbol}, 2FA {twoFactor}."
+    },
+    "audit": {
+      "title": "Audit retention",
+      "hint": "Set 0 to keep audit entries forever. The audit viewer and purge action use this value immediately.",
+      "viewerLink": "Open audit viewer"
+    },
+    "workspace": {
+      "title": "Workspace preferences",
+      "resolvedTitle": "Resolved time zone",
+      "resolved": "The app resolves dates in {zone}.",
+      "hint": "Use an IANA time zone name, for example UTC or Europe/Paris."
+    },
+    "infrastructure": {
+      "title": "Infrastructure status",
+      "subtitle": "These values come from the environment, not the runtime settings table. Change them in your deployment and restart the app.",
+      "noValues": "Values are intentionally hidden here; only configuration status is shown."
+    },
+    "viewOnly": "View only"
+  },
+  "license": {
+    "title": "License and entitlements",
+    "subtitle": "The plan mapping defines available features. Installed modules are managed separately.",
+    "currentPlan": "Current plan",
+    "plans": {
+      "free": "Free",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "featuresTitle": "Plan features",
+    "activeTitle": "Available on your plan",
+    "missingTitle": "Not included on this plan",
+    "noMissing": "No plan features are missing.",
+    "entitlements": {
+      "core": {
+        "access": "Core access"
+      },
+      "users": {
+        "management": "User management"
+      },
+      "roles": {
+        "custom": "Custom roles"
+      },
+      "audit": {
+        "viewer": "Audit viewer",
+        "export": "Audit export"
+      },
+      "settings": {
+        "basic": "Basic settings",
+        "advancedPerformance": "Advanced performance tuning"
+      },
+      "modules": {
+        "store": "Module store",
+        "premium": "Premium modules"
+      }
+    },
+    "restrictionTitle": "Free plan restriction",
+    "restrictionBody": "Advanced performance tuning requires Pro or Enterprise.",
+    "advancedLink": "Open advanced performance settings",
+    "manageTitle": "Change plan",
+    "manageSubtitle": "Update the workspace plan and optional license details.",
+    "planLabel": "Plan",
+    "licenseKeyLabel": "License key (optional)",
+    "licenseKeyHintBlank": "Leave blank to remove the stored key; the raw key is never displayed.",
+    "keyStatus": "License key",
+    "validUntilLabel": "Valid until (optional)",
+    "validUntilHint": "Use an ISO date. An expired date resolves the effective plan to Free.",
+    "save": "Update license",
+    "saved": "License updated.",
+    "statusSet": "Set",
+    "statusNotSet": "Not set"
   }
 }

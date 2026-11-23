@@ -1,8 +1,8 @@
-# Authorization & audit (M2)
+# Authorization, audit & entitlements (M2–M3)
 
 M2 replaces the temporary `User.role` string with our own RBAC model and extends the audit surface. Better Auth still owns identity and sessions; **RBAC owns authorization**. Every protected page, server action, and API handler checks a **permission key**, never a role name. UI affordances are permission-aware for convenience, but hiding a button is not enforcement.
 
-See [`identity.md`](identity.md) for sign-in/session behavior and [`developer-guide.md`](developer-guide.md) for the code seams.
+M3 adds an independent, plan-level check: **entitlements** describe what the current plan allows. A route or action that needs both runs both guards. See [`licensing.md`](licensing.md) for plans, keys, and the single `getEntitlements()` seam; [`identity.md`](identity.md) for sign-in/session behavior and [`developer-guide.md`](developer-guide.md) for code seams.
 
 ## Storage and tenancy
 
@@ -21,22 +21,22 @@ All four tables carry `workspaceId`, defaulting to `""` for the single-tenant de
 
 The catalog is defined and zod-validated in `src/core/rbac/permissions.ts`. Unknown keys are rejected; keys are stable strings and are referenced by guards, seeds, role bundles, and module manifests.
 
-| Key                                | Meaning                                                                                                      |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `app.access`                       | Base access to session-protected `(app)` pages. Held by Member and by custom roles built for end users.      |
-| `users.read`                       | List users and open the profile on `/users/[id]`. Active sessions are a separate key.                        |
-| `users.invite`                     | Create an invitation and choose the initial role for the invitee.                                            |
-| `users.update`                     | Edit user details, activate / deactivate accounts, change a user's role (except Owner), and revoke sessions. |
-| `users.sessions.read`              | View the active sessions on `/users/[id]`.                                                                   |
-| `roles.read`                       | View roles, the permission catalog, and role assignments.                                                    |
-| `roles.manage`                     | Create, rename, edit the permission bundle of, and delete custom roles.                                      |
-| `roles.assign_owner`               | Grant the Owner system role. Reserved for the Owner bundle; custom roles cannot include it.                  |
-| `audit.read`                       | View and filter the audit log.                                                                               |
-| `audit.export`                     | Export filtered audit entries to CSV.                                                                        |
-| `audit.manage`                     | Run the retention purge.                                                                                     |
-| `settings.read`, `settings.update` | Reserved for M3 settings pages. Defined in the catalog now; no M2 UI or guard.                               |
-| `license.read`, `license.manage`   | Reserved for M3 license and entitlements. Defined in the catalog now; no M2 UI or guard.                     |
-| `modules.read`, `modules.manage`   | Reserved for M4 store and module management. Defined now; M4 adds module-prefixed keys from manifests.       |
+| Key                                | Meaning                                                                                                               |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `app.access`                       | Base access to session-protected `(app)` pages. Held by Member and by custom roles built for end users.               |
+| `users.read`                       | List users and open the profile on `/users/[id]`. Active sessions are a separate key.                                 |
+| `users.invite`                     | Create an invitation and choose the initial role for the invitee.                                                     |
+| `users.update`                     | Edit user details, activate / deactivate accounts, change a user's role (except Owner), and revoke sessions.          |
+| `users.sessions.read`              | View the active sessions on `/users/[id]`.                                                                            |
+| `roles.read`                       | View roles, the permission catalog, and role assignments.                                                             |
+| `roles.manage`                     | Create, rename, edit the permission bundle of, and delete custom roles.                                               |
+| `roles.assign_owner`               | Grant the Owner system role. Reserved for the Owner bundle; custom roles cannot include it.                           |
+| `audit.read`                       | View and filter the audit log.                                                                                        |
+| `audit.export`                     | Export filtered audit entries to CSV.                                                                                 |
+| `audit.manage`                     | Run the retention purge.                                                                                              |
+| `settings.read`, `settings.update` | View the settings pages and save runtime settings. Used by the M3 settings layout, pages, and update action.          |
+| `license.read`, `license.manage`   | `license.read` shows the `/license` sidebar link; `license.manage` allows plan/license changes and guards the action. |
+| `modules.read`, `modules.manage`   | Reserved for M4 store and module management. Defined now; M4 adds module-prefixed keys from manifests.                |
 
 Non-Owner role changes are guarded by `users.update`; the retention purge is guarded by `audit.manage`. An Owner automatically receives every catalog key (including reserved ones); Admin receives every key except `roles.assign_owner`.
 
@@ -75,7 +75,7 @@ Both check the permission key on the server on every request, including direct r
 
 ### Action vocabulary
 
-Actions are dot-namespaced strings. M2 uses:
+Actions are dot-namespaced strings. M2 and M3 use:
 
 | Action                                            | Meaning                                                                           |
 | ------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -90,6 +90,9 @@ Actions are dot-namespaced strings. M2 uses:
 | `roles.created`, `roles.updated`, `roles.deleted` | Custom role lifecycle.                                                            |
 | `audit.exported`                                  | A filtered CSV export was produced.                                               |
 | `audit.purged`                                    | A retention purge ran.                                                            |
+| `settings.updated`                                | Runtime settings changed, with before/after values per key.                       |
+| `license.plan.changed`                            | The workspace plan changed (before/after `plan`).                                 |
+| `license.key.updated`                             | License key presence changed (boolean only; never the raw key).                   |
 
 Later milestones add their own actions using the same dot-namespaced convention; module-authored actions use the module id as their prefix.
 
@@ -112,8 +115,14 @@ CSV handling:
 - Formula injection is neutralized: any cell starting with `=`, `+`, `-`, `@`, tab, or carriage return is prefixed with a single quote (`'`) **before** quoting, so spreadsheets treat it as text.
 - The response is `text/csv; charset=utf-8` with an attachment filename; a UTF-8 BOM is used for spreadsheet compatibility.
 
-Retention in M2 is an infrastructure value, `AUDIT_RETENTION_DAYS` (default `0` = keep forever). Purge is an explicit operation gated by `audit.manage`, not a background job: it deletes entries older than the configured window and then writes its own `audit.purged` entry with the day count, cutoff, and number deleted. With `0`, no entry is eligible for deletion. **M3 moves the setting into validated runtime Settings** with the same `0 = forever` semantics; the purge seam and action vocabulary do not change.
+Retention in M2 was an infrastructure value, `AUDIT_RETENTION_DAYS` (default `0` = keep forever). Purge is an explicit operation gated by `audit.manage`, not a background job: it deletes entries older than the configured window and then writes its own `audit.purged` entry with the day count, cutoff, and number deleted. With `0`, no entry is eligible for deletion. **M3 moved the value into the validated runtime setting `audit.retentionDays`** with the same `0 = forever` semantics; the env value is now only the seed default. See [`settings.md`](settings.md).
+
+## Entitlements (M3)
+
+Entitlements are plan-level capability keys (`core.access`, `users.management`, `roles.custom`, `audit.viewer`, `audit.export`, `settings.basic`, `settings.advancedPerformance`, `modules.store`, `modules.premium`) mapped cumulatively to `free`, `pro`, and `enterprise`. They are **not** permissions: RBAC says who a user is, entitlements say what the plan allows. Use both when a feature is gated twice.
+
+All plan reads go through `getEntitlements()` in `src/core/entitlements/service.ts`; the plan mapping is authoritative and the persisted `License.entitlements` JSON is informational. Missing, expired, unknown, or failed reads degrade to Free. `performance.cacheReads = false` bypasses the `license` cache. Guards in `src/core/entitlements/guards.ts` are `requireEntitlement()` for actions/APIs, `requirePageEntitlement()` (redirects to `/forbidden`) for pages, and `requireModuleInstallEntitlement()` — the mandatory `modules.store` check M4 must call before any module install or enable. See [`licensing.md`](licensing.md) for the full vocabulary, cache behavior, and the audited license update action.
 
 ## Module handoff (M4)
 
-Modules are bundled at build time and declare their permissions in their zod-validated manifest with a module-id prefix. M4 aggregates those keys into this same catalog, so system-role bundles and guards need no special cases: `Owner` receives them automatically, `Admin` receives all except `roles.assign_owner`, and module routes/actions call the same guards and `audit.log()` (installation and uninstallation are DB state changes with module-prefixed audit actions). No runtime code loading is involved.
+Modules are bundled at build time and declare their permissions in their zod-validated manifest with a module-id prefix. M4 aggregates those keys into this same catalog, so system-role bundles and guards need no special cases: `Owner` receives them automatically, `Admin` receives all except `roles.assign_owner`, and module routes/actions call the same guards and `audit.log()` (installation and uninstallation are DB state changes with module-prefixed audit actions). Before any install or enable, M4 must also call `requireModuleInstallEntitlement()` so entitlement checks stay centralized. No runtime code loading is involved, and there is no module installation in M3.

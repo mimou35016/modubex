@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { env } from "@/core/config/env";
+import { getSecuritySettings } from "@/core/settings/service";
 import {
   PermissionDeniedError,
   type PermissionKey,
@@ -16,7 +16,8 @@ const requireSessionCached = cache(async () => {
   const session = await getSessionCached();
   if (!session) redirect("/sign-in");
 
-  if (env.AUTH_2FA_REQUIRED && !session.user.twoFactorEnabled) {
+  const { requireTwoFactor } = await getSecuritySettings();
+  if (requireTwoFactor && !session.user.twoFactorEnabled) {
     redirect("/two-factor/enroll");
   }
 

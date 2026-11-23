@@ -36,7 +36,8 @@ const envSchema = z
     // Default is a local-only development credential; override in real environments.
     SEED_OWNER_PASSWORD: z.string().min(1).default("Owner!Local2026#"),
 
-    // Audit retention in days. 0 disables automatic purging (keep forever).
+    // Seed default for the runtime audit.retentionDays setting. 0 keeps logs
+    // forever; the runtime value lives in the settings table.
     AUDIT_RETENTION_DAYS: z.coerce.number().int().min(0).max(3650).default(0),
   })
   .refine((values) => values.AUTH_PASSWORD_MAX_LENGTH >= values.AUTH_PASSWORD_MIN_LENGTH, {

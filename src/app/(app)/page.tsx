@@ -1,12 +1,30 @@
 import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getEntitlements } from "@/core/entitlements/service";
 import { getFoundationReadiness } from "@/core/foundation/readiness";
+import { getSettingValue } from "@/core/settings/service";
 import { cn } from "@/lib/utils";
 
 export default async function Home() {
   const t = await getTranslations("overview");
+  const tLicense = await getTranslations("license");
   const { checks, milestones, currentMilestone, version } = getFoundationReadiness();
+  const [entitlements, siteName, defaultLocale, retentionDays] = await Promise.all([
+    getEntitlements(),
+    getSettingValue("site.name"),
+    getSettingValue("localization.defaultLocale"),
+    getSettingValue("audit.retentionDays"),
+  ]);
+  const summary = [
+    { label: t("plan"), value: tLicense(`plans.${entitlements.plan}`) },
+    { label: t("siteName"), value: siteName },
+    { label: t("defaultLocale"), value: t(`locales.${defaultLocale}`) },
+    {
+      label: t("auditRetention"),
+      value: retentionDays === 0 ? t("forever") : t("days", { days: retentionDays }),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -71,10 +89,22 @@ export default async function Home() {
         </CardContent>
       </Card>
 
-      <section className="mt-8 border-s-2 border-accent ps-5">
-        <h2 className="text-sm font-semibold tracking-tight">{t("nextTitle")}</h2>
-        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{t("nextBody")}</p>
-      </section>
+      <Card className="mt-8">
+        <CardHeader className="border-b">
+          <CardTitle>{t("summaryTitle")}</CardTitle>
+          <p className="text-xs text-muted">{t("summarySubtitle")}</p>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {summary.map((item) => (
+              <div key={item.label} className="min-w-0">
+                <dt className="text-xs text-muted">{item.label}</dt>
+                <dd className="mt-1 truncate text-sm font-medium">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </CardContent>
+      </Card>
     </div>
   );
 }

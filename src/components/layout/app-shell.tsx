@@ -17,6 +17,8 @@ type Props = {
   currentMilestone: string;
   user: ShellUser | null;
   permissions?: PermissionKeys;
+  appName?: string;
+  tagline?: string;
 };
 
 const mobileLink = "shrink-0 whitespace-nowrap text-xs font-medium text-muted";
@@ -28,16 +30,26 @@ export async function AppShell({
   currentMilestone,
   user,
   permissions = [],
+  appName,
+  tagline,
 }: Props) {
   const t = await getTranslations("nav");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
   const canInvite = hasPermission(permissions, "users.invite");
   const canSeeAudit = hasPermission(permissions, "audit.read");
+  const canSeeLicense = hasPermission(permissions, "license.read");
+  const canSeeSettings = hasPermission(permissions, "settings.read");
 
   return (
     <div className="flex min-h-full flex-col md:flex-row">
-      <Sidebar version={version} currentMilestone={currentMilestone} permissions={permissions} />
+      <Sidebar
+        version={version}
+        currentMilestone={currentMilestone}
+        permissions={permissions}
+        appName={appName}
+        tagline={tagline}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header user={user} />
         <nav
@@ -60,6 +72,16 @@ export async function AppShell({
           {canSeeAudit ? (
             <NavLink href="/audit" className={mobileLink} activeClassName={mobileActive}>
               {t("areas.audit")}
+            </NavLink>
+          ) : null}
+          {canSeeLicense ? (
+            <NavLink href="/license" exact className={mobileLink} activeClassName={mobileActive}>
+              {t("areas.license")}
+            </NavLink>
+          ) : null}
+          {canSeeSettings ? (
+            <NavLink href="/settings" className={mobileLink} activeClassName={mobileActive}>
+              {t("areas.settings")}
             </NavLink>
           ) : null}
           {canInvite ? (

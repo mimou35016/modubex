@@ -1,26 +1,54 @@
 import { z } from "zod";
 import { env } from "@/core/config/env";
 
-/** Active password policy, derived from validated environment configuration. */
+/** Shared shape for the env bootstrap rules and the live runtime rules. */
+export type PasswordRules = {
+  minLength: number;
+  maxLength: number;
+  requireNumber: boolean;
+  requireSymbol: boolean;
+};
+
+/** Client-safe bootstrap policy derived from validated environment configuration. */
 export const passwordRules = {
   minLength: env.AUTH_PASSWORD_MIN_LENGTH,
   maxLength: env.AUTH_PASSWORD_MAX_LENGTH,
   requireNumber: env.AUTH_PASSWORD_REQUIRE_NUMBER,
   requireSymbol: env.AUTH_PASSWORD_REQUIRE_SYMBOL,
-} as const;
+} as const satisfies PasswordRules;
 
-export const passwordSchema = z
-  .string()
-  .min(passwordRules.minLength, `Password must be at least ${passwordRules.minLength} characters.`)
-  .max(passwordRules.maxLength, `Password must be at most ${passwordRules.maxLength} characters.`)
-  .refine(
-    (password) => !passwordRules.requireNumber || /\d/.test(password),
-    "Password must contain at least one number.",
-  )
-  .refine(
-    (password) => !passwordRules.requireSymbol || /[^A-Za-z0-9]/.test(password),
-    "Password must contain at least one symbol.",
-  );
+/** Synchronous schema builder; callers choose bootstrap or live rules. */
+export function buildPasswordSchema(rules: PasswordRules) {
+  return z
+    .string()
+    .min(rules.minLength, `Password must be at least ${rules.minLength} characters.`)
+    .max(rules.maxLength, `Password must be at most ${rules.maxLength} characters.`)
+    .refine((password) => !rules.requireNumber || /\d/.test(password), {
+      message: "Password must contain at least one number.",
+    })
+    .refine((password) => !rules.requireSymbol || /[^A-Za-z0-9]/.test(password), {
+      message: "Password must contain at least one symbol.",
+    });
+}
+
+/** Synchronous bootstrap schema used by client forms and static schemas. */
+export const passwordSchema = buildPasswordSchema(passwordRules);
+
+type PasswordRulesResolver = () => Promise<PasswordRules>;
+
+// The server entrypoint injects the settings-backed resolver. Keeping the
+// dependency inverted prevents Prisma/next/cache from entering client bundles.
+let livePasswordRulesResolver: PasswordRulesResolver = async () => passwordRules;
+
+export function configurePasswordRulesResolver(resolver: PasswordRulesResolver): void {
+  livePasswordRulesResolver = resolver;
+}
+
+/** Resolves the live settings policy, then validates with the same zod rules. */
+export async function validatePasswordWithSettings(password: string) {
+  const rules = await livePasswordRulesResolver();
+  return buildPasswordSchema(rules).safeParse(password);
+}
 
 export const signInSchema = z.object({
   email: z.email(),

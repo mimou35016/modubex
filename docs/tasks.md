@@ -3,6 +3,7 @@
 Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` update with every milestone (definition of done).
 
 ## M0 — Foundation & quality baseline
+
 **Exit:** fresh clone → running, branded app; gates wired. **Status: complete.**
 
 - [x] M0.1 Pin dependencies and commit `package-lock.json`.
@@ -16,6 +17,7 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - [x] M0.9 Replace stale stock README with real setup steps; add `.env.example`.
 
 ## M1 — Identity & sessions
+
 **Exit:** AC1 — seeded Owner, working sign-in. **Status: complete.**
 
 - [x] M1.1 Better Auth + Prisma adapter; migrate User / Session / Account.
@@ -28,6 +30,7 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - [x] M1.8 Seed first Owner; sign-in smoke test from a fresh database.
 
 ## M2 — Authorization core (RBAC + audit)
+
 **Exit:** AC3, AC4, AC10. **Status: complete.**
 
 - [x] M2.1 Permission catalog in code, zod-validated (`users.read`, `roles.manage`, …).
@@ -40,19 +43,21 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - [x] M2.8 Retention policy (forever / N days) + purge that writes its own audit entry.
 
 ## M3 — Settings & entitlements
-**Exit:** AC7, AC8.
 
-- M3.1 Setting model (key, validated value, scope-ready for workspaces).
-- M3.2 Server settings registry with zod schemas; cached reads with invalidation on change.
-- M3.3 Runtime settings pages: site/branding, SEO, performance/cache, localization, security, audit retention, workspace prefs.
-- M3.4 Infrastructure settings shown read-only; restart/rebuild-required values labeled, not toggled.
-- M3.5 Audit every settings change with before and after values.
-- M3.6 License model + single plan→entitlement mapping (Free / Pro / Enterprise).
-- M3.7 `getEntitlements()` interface and local implementation — the only entitlement seam.
-- M3.8 Enforce entitlements on routes, server actions, and module installation.
-- M3.9 License & Entitlements page; audit plan and license changes.
+**Exit:** AC7, AC8. **Status: complete.**
+
+- [x] M3.1 Setting model (key, validated value, scope-ready for workspaces).
+- [x] M3.2 Server settings registry with zod schemas; cached reads with invalidation on change.
+- [x] M3.3 Runtime settings pages: site/branding, SEO, performance/cache, localization, security, audit retention, workspace prefs.
+- [x] M3.4 Infrastructure settings shown read-only; restart/rebuild-required values labeled, not toggled.
+- [x] M3.5 Audit every settings change with before and after values.
+- [x] M3.6 License model + single plan→entitlement mapping (Free / Pro / Enterprise).
+- [x] M3.7 `getEntitlements()` interface and local implementation — the only entitlement seam.
+- [x] M3.8 Enforce entitlements on routes, server actions, and module installation (module-install guard is the M4 handoff; no store in M3).
+- [x] M3.9 License & Entitlements page; audit plan and license changes.
 
 ## M4 — Module system & store
+
 **Exit:** AC5, AC6.
 
 - M4.1 zod manifest schema + build-time discovery of `src/modules/*`; define module id/model prefix convention.
@@ -66,6 +71,7 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - M4.9 Store UI: discover modules with state, required plan, and dependencies.
 
 ## M5 — Dashboard & adapters
+
 **Exit:** AC11; no fake UI in shipped pages.
 
 - M5.1 `sendMail()` adapter interface + SMTP default; localized verification/reset/invitation templates; log failures.
@@ -77,6 +83,7 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - M5.7 Manual zero-fake-UI sweep: every control has a real handler and persisted effect.
 
 ## M6 — Example module & quality gates
+
 **Exit:** AC2, AC9, AC12.
 
 - M6.1 Example module manifest: routes, sidebar, permissions, settings schema, plan tier, dependencies.
@@ -87,6 +94,7 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 - M6.6 Tests for RBAC guards, last-Owner rule, module lifecycle, entitlements, settings invalidation.
 
 ## M7 — Reference deployment & docs
+
 **Exit:** AC13, AC14; all 14 acceptance criteria green.
 
 - M7.1 Dockerfile + docker-compose (app, PostgreSQL, Mailpit) reference setup.

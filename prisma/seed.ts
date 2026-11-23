@@ -6,6 +6,7 @@ import {
   type SystemRoleKey,
 } from "../src/core/rbac/permissions";
 import { syncSystemRolePermissions } from "../src/core/rbac/service";
+import { ensureDefaultSettings } from "../src/core/settings/service";
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/lib/prisma";
 
@@ -152,11 +153,31 @@ async function syncRbac(ownerUserId: string): Promise<void> {
   logger.info("RBAC catalog and system roles synced", { milestone: "M2" });
 }
 
+/** Seeds the single license snapshot once; existing rows are never changed. */
+async function ensureLicense(): Promise<void> {
+  const existing = await prisma.license.findFirst({
+    where: { workspaceId: WORKSPACE_ID },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  await prisma.license.create({
+    data: {
+      plan: "pro",
+      entitlements: [],
+      workspaceId: WORKSPACE_ID,
+    },
+  });
+  logger.info("License seeded", { milestone: "M3", plan: "pro" });
+}
+
 async function main(): Promise<void> {
   await prisma.$connect();
   const email = env.SEED_OWNER_EMAIL.toLowerCase();
   const ownerUserId = await ensureOwnerUser(email);
   await syncRbac(ownerUserId);
+  await ensureDefaultSettings();
+  await ensureLicense();
 }
 
 main()

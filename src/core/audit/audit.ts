@@ -31,6 +31,9 @@ export const auditActions = {
   rolesDeleted: "roles.deleted",
   auditExported: "audit.exported",
   auditPurged: "audit.purged",
+  settingsUpdated: "settings.updated",
+  licensePlanChanged: "license.plan.changed",
+  licenseKeyUpdated: "license.key.updated",
 } as const;
 
 export type CoreAuditAction = (typeof auditActions)[keyof typeof auditActions];

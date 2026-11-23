@@ -1,6 +1,7 @@
-// M1 identity & sessions plus M2 authorization core. Better Auth owns
-// identity/sessions; RBAC and audit live in our own schema. Module-owned
-// models join this shared schema in M4 and must use a module prefix.
+// M1 identity & sessions, M2 authorization core, and M3 settings/license
+// foundation. Better Auth owns identity/sessions; RBAC, audit, and runtime
+// settings live in our own schema. Module-owned models join this shared schema
+// in M4 and must use a module prefix.
 
 generator client {
   provider = "prisma-client-js"
@@ -210,4 +211,36 @@ model Invitation {
   @@index([email])
   @@index([workspaceId])
   @@map("invitation")
+}
+
+/// Runtime setting row. Keys are declared in the settings registry; env-only
+/// infrastructure values are never stored here.
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  workspaceId String   @default("")
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@map("setting")
+}
+
+/// Single entitlement/license snapshot. Entitlement mapping is owned by a
+/// later workstream; M3 only provisions the persisted row.
+model License {
+  id           String   @id @default(cuid())
+  plan         String   @default("pro")
+  licenseKey   String?
+  entitlements Json
+  validUntil   DateTime?
+  workspaceId  String   @default("")
+  updatedById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@map("license")
 }

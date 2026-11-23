@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getMessages } from "next-intl/server";
-import { defaultLocale, getLocaleConfig, isLocale } from "@/core/i18n/locales";
+import { defaultLocale, getLocaleConfig, isLocale, type Locale } from "@/core/i18n/locales";
+import { getDefaultLocale, getSettingValue } from "@/core/settings/service";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -17,15 +18,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Modubex — Foundation",
+const fallbackMetadata: Metadata = {
+  title: "Modubex",
   description: "A lean, modular foundation for web applications and admin dashboards.",
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+async function resolveLocale(): Promise<Locale> {
   const cookieStore = await cookies();
   const requested = cookieStore.get("NEXT_LOCALE")?.value;
-  const locale = isLocale(requested) ? requested : defaultLocale;
+  if (isLocale(requested)) return requested;
+
+  try {
+    const configured = await getDefaultLocale();
+    if (isLocale(configured)) return configured;
+  } catch {
+    // Registry defaults keep the app renderable when settings are unavailable.
+  }
+  return defaultLocale;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const [siteName, description, titleSuffix] = await Promise.all([
+      getSettingValue("site.name"),
+      getSettingValue("seo.description"),
+      getSettingValue("seo.titleSuffix"),
+    ]);
+
+    return {
+      title: { default: siteName, template: `%s — ${titleSuffix}` },
+      description: description || fallbackMetadata.description,
+    };
+  } catch {
+    return fallbackMetadata;
+  }
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await resolveLocale();
   const messages = await getMessages();
 
   return (

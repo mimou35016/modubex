@@ -1,17 +1,17 @@
-import { env } from "@/core/config/env";
+import { getSettingValue } from "@/core/settings/service";
 import { prisma } from "@/lib/prisma";
 import { audit, auditActions, type AuditActor } from "./audit";
 
 const MS_PER_DAY = 86_400_000;
 
-/** Configured retention window in days; 0 means entries are kept forever. */
-export function getAuditRetention(): number {
-  return env.AUDIT_RETENTION_DAYS;
+/** Configured runtime retention window in days; 0 keeps entries forever. */
+export async function getAuditRetention(): Promise<number> {
+  return getSettingValue("audit.retentionDays");
 }
 
 /** Cutoff timestamp for the configured retention window, or null when disabled. */
-export function getAuditRetentionCutoff(now: Date = new Date()): Date | null {
-  const days = getAuditRetention();
+export async function getAuditRetentionCutoff(now: Date = new Date()): Promise<Date | null> {
+  const days = await getAuditRetention();
   if (days <= 0) return null;
   return new Date(now.getTime() - days * MS_PER_DAY);
 }
@@ -23,7 +23,7 @@ export function getAuditRetentionCutoff(now: Date = new Date()): Date | null {
 export async function purgeExpiredAuditLogs(
   actor: AuditActor,
 ): Promise<{ deleted: number; cutoff: Date | null }> {
-  const cutoff = getAuditRetentionCutoff();
+  const cutoff = await getAuditRetentionCutoff();
   if (!cutoff) return { deleted: 0, cutoff: null };
 
   const deleted = await prisma.$transaction(async (tx) => {

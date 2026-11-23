@@ -68,8 +68,8 @@
       "haveAccount": "Vous avez déjà un compte ?",
       "passwordHelp": "Votre mot de passe doit respecter ces règles :",
       "rules": {
-        "minLength": "Au moins 12 caractères",
-        "maxLength": "Au plus 128 caractères",
+        "minLength": "Au moins {min} caractères",
+        "maxLength": "Au maximum {max} caractères",
         "number": "Au moins un chiffre",
         "symbol": "Au moins un symbole",
         "lowercase": "Au moins une lettre minuscule",
@@ -86,7 +86,8 @@
       "title": "Choisissez un nouveau mot de passe",
       "submit": "Enregistrer le mot de passe",
       "success": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.",
-      "missingToken": "Ce lien de réinitialisation est invalide ou a expiré."
+      "missingToken": "Ce lien de réinitialisation est invalide ou a expiré.",
+      "passwordHelp": "Votre mot de passe doit respecter ces exigences :"
     },
     "verify": {
       "title": "Vérifiez votre adresse e-mail",
@@ -162,10 +163,21 @@
       "ready": "Prêt",
       "pending": "En attente"
     },
-    "nextTitle": "Ensuite : noyau d'autorisation",
-    "nextBody": "L'étape 2 ajoute le catalogue de permissions, les gardes RBAC, la gestion des rôles et le visualiseur d'audit.",
     "version": "Version",
-    "environment": "Environnement"
+    "environment": "Environnement",
+    "summaryTitle": "Résumé du jalon 3",
+    "summarySubtitle": "État réel de l'espace de travail, issu des paramètres et du service d'autorisations.",
+    "plan": "Forfait effectif",
+    "siteName": "Nom du site",
+    "defaultLocale": "Langue par défaut",
+    "auditRetention": "Conservation des audits",
+    "forever": "Indéfiniment",
+    "days": "{days} jours",
+    "locales": {
+      "en": "Anglais",
+      "fr": "Français",
+      "ar": "Arabe"
+    }
   },
   "rbac": {
     "title": "Rôles et permissions",
@@ -295,5 +307,171 @@
     "title": "Accès refusé",
     "body": "Vous n'avez pas la permission de consulter cette page. Contactez un administrateur si vous pensez qu'il s'agit d'une erreur.",
     "back": "Retour à l'aperçu"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Les paramètres d'exécution sont validés et appliqués immédiatement. Les valeurs liées à l'environnement sont en lecture seule.",
+    "navLabel": "Sections des paramètres",
+    "tabs": {
+      "site": "Site",
+      "seo": "SEO",
+      "performance": "Performance",
+      "localization": "Localisation",
+      "security": "Sécurité",
+      "audit": "Rétention des audits",
+      "workspace": "Espace de travail",
+      "infrastructure": "Infrastructure"
+    },
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "save": "Enregistrer les modifications",
+    "saved": "Paramètres enregistrés.",
+    "readOnly": "Vous pouvez consulter les paramètres, mais vous n'avez pas l'autorisation de les modifier.",
+    "restartRequired": "Redémarrage requis",
+    "sensitive": "Sensible",
+    "configured": "Configuré",
+    "notConfigured": "Non configuré",
+    "set": "Défini",
+    "notSet": "Non défini",
+    "fields": {
+      "site": {
+        "name": "Nom du site",
+        "tagline": "Slogan"
+      },
+      "seo": {
+        "description": "Description méta",
+        "titleSuffix": "Suffixe du titre"
+      },
+      "performance": {
+        "cacheReads": "Lectures en cache des paramètres et des autorisations",
+        "cacheReadsDescription": "Lorsque cette option est désactivée, les lectures vont directement dans Prisma."
+      },
+      "localization": {
+        "defaultLocale": "Langue par défaut"
+      },
+      "security": {
+        "passwordMinLength": "Longueur minimale du mot de passe",
+        "passwordMaxLength": "Longueur maximale du mot de passe",
+        "requireNumber": "Exiger un chiffre",
+        "requireSymbol": "Exiger un symbole",
+        "requireTwoFactor": "Exiger la double authentification",
+        "requireTwoFactorDescription": "Les membres sans 2FA seront redirigés vers l'inscription."
+      },
+      "audit": {
+        "retentionDays": "Durée de conservation (jours)"
+      },
+      "workspace": {
+        "timeZone": "Fuseau horaire de l'espace de travail"
+      },
+      "infrastructure": {
+        "databaseUrl": "Connexion à la base de données",
+        "authUrl": "URL de base de l'authentification",
+        "authSecret": "Secret d'authentification",
+        "passwordMinBootstrap": "Longueur minimale du mot de passe initiale",
+        "auditRetentionBootstrap": "Conservation initiale des audits"
+      }
+    },
+    "site": {
+      "title": "Identité du site",
+      "subtitle": "Identité visuelle affichée dans l'interface et les métadonnées."
+    },
+    "seo": {
+      "title": "Métadonnées SEO",
+      "subtitle": "Valeurs par défaut lorsqu'une page ne définit pas ses propres métadonnées."
+    },
+    "performance": {
+      "title": "Performance",
+      "subtitle": "Contrôlez la façon dont les paramètres et les autorisations sont lus.",
+      "statusTitle": "Lectures en cache",
+      "statusEnabled": "Les lectures du cache Next sont activées.",
+      "statusDisabled": "Les lectures directes dans la base sont activées.",
+      "explanation": "Les paramètres utilisent le tag de cache {tag} et une fenêtre de revalidation de {seconds} secondes. Une modification des paramètres invalide immédiatement le tag.",
+      "advancedLink": "Paramètres de performance avancés",
+      "advancedTitle": "Réglages de performance avancés",
+      "advancedHint": "Désactiver les lectures en cache contourne le cache Next.js et interroge Prisma directement à chaque lecture des paramètres et des autorisations."
+    },
+    "localization": {
+      "title": "Localisation",
+      "defaultLocaleHint": "Cette langue est utilisée par défaut lorsqu'aucun cookie NEXT_LOCALE valide n'existe. Le choix de l'utilisateur est toujours prioritaire.",
+      "locales": {
+        "en": "Anglais",
+        "fr": "Français",
+        "ar": "Arabe"
+      }
+    },
+    "security": {
+      "title": "Politique de sécurité",
+      "liveTitle": "Politique active",
+      "liveNote": "L'inscription et la réinitialisation utilisent ces valeurs dès la requête suivante : de {min} à {max} caractères, chiffre {number}, symbole {symbol}, 2FA {twoFactor}."
+    },
+    "audit": {
+      "title": "Rétention des audits",
+      "hint": "Définissez 0 pour conserver les entrées indéfiniment. Le visualiseur d'audit et la purge utilisent cette valeur immédiatement.",
+      "viewerLink": "Ouvrir le visualiseur d'audit"
+    },
+    "workspace": {
+      "title": "Préférences de l'espace de travail",
+      "resolvedTitle": "Fuseau horaire résolu",
+      "resolved": "L'application résout les dates avec {zone}.",
+      "hint": "Utilisez un nom de fuseau horaire IANA, par exemple UTC ou Europe/Paris."
+    },
+    "infrastructure": {
+      "title": "État de l'infrastructure",
+      "subtitle": "Ces valeurs proviennent de l'environnement et non de la table des paramètres. Modifiez-les dans votre déploiement, puis redémarrez l'application.",
+      "noValues": "Les valeurs sont volontairement masquées ici ; seul l'état de configuration est affiché."
+    },
+    "viewOnly": "Lecture seule"
+  },
+  "license": {
+    "title": "Licence et autorisations",
+    "subtitle": "Le mappage du plan définit les fonctionnalités disponibles. Les modules installés sont gérés séparément.",
+    "currentPlan": "Forfait actuel",
+    "plans": {
+      "free": "Gratuit",
+      "pro": "Pro",
+      "enterprise": "Entreprise"
+    },
+    "featuresTitle": "Fonctionnalités du forfait",
+    "activeTitle": "Disponibles avec votre forfait",
+    "missingTitle": "Non incluses dans ce forfait",
+    "noMissing": "Aucune fonctionnalité du forfait n'est manquante.",
+    "entitlements": {
+      "core": {
+        "access": "Accès de base"
+      },
+      "users": {
+        "management": "Gestion des utilisateurs"
+      },
+      "roles": {
+        "custom": "Rôles personnalisés"
+      },
+      "audit": {
+        "viewer": "Visualiseur d'audit",
+        "export": "Export d'audit"
+      },
+      "settings": {
+        "basic": "Paramètres de base",
+        "advancedPerformance": "Réglages de performance avancés"
+      },
+      "modules": {
+        "store": "Boutique de modules",
+        "premium": "Modules premium"
+      }
+    },
+    "restrictionTitle": "Restriction du forfait gratuit",
+    "restrictionBody": "Les réglages de performance avancés nécessitent Pro ou Entreprise.",
+    "advancedLink": "Ouvrir les paramètres de performance avancés",
+    "manageTitle": "Modifier le forfait",
+    "manageSubtitle": "Mettez à jour le forfait et les informations de licence facultatives.",
+    "planLabel": "Forfait",
+    "licenseKeyLabel": "Clé de licence (facultatif)",
+    "licenseKeyHintBlank": "Laissez vide pour supprimer la clé enregistrée ; la clé brute n'est jamais affichée.",
+    "keyStatus": "Clé de licence",
+    "validUntilLabel": "Valable jusqu'au (facultatif)",
+    "validUntilHint": "Utilisez une date ISO. Une date expirée ramène le forfait effectif à Gratuit.",
+    "save": "Mettre à jour la licence",
+    "saved": "Licence mise à jour.",
+    "statusSet": "Définie",
+    "statusNotSet": "Non définie"
   }
 }

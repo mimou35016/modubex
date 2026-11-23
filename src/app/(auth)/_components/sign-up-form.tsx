@@ -4,15 +4,16 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { z } from "zod";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { passwordRules, signUpSchema } from "@/core/auth/schemas";
+import { buildPasswordSchema, type PasswordRules } from "@/core/auth/schemas";
 import { authClient } from "@/lib/auth-client";
 import { authErrorCode, getAuthError, passwordRuleHints } from "./form-utils";
 
-export function SignUpForm() {
+export function SignUpForm({ rules }: { rules: PasswordRules }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [name, setName] = useState("");
@@ -21,13 +22,27 @@ export function SignUpForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hints = passwordRuleHints(passwordRules, (key) => t(key));
+  const schema = z.object({
+    name: z.string().trim().min(1),
+    email: z.email(),
+    password: buildPasswordSchema(rules),
+  });
+
+  const hints = passwordRuleHints(rules, (key) => {
+    if (key === "signUp.rules.minLength") {
+      return t("signUp.rules.minLength", { min: rules.minLength });
+    }
+    if (key === "signUp.rules.maxLength") {
+      return t("signUp.rules.maxLength", { max: rules.maxLength });
+    }
+    return t(key);
+  });
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
-    const parsed = signUpSchema.safeParse({ name, email, password });
+    const parsed = schema.safeParse({ name, email, password });
     if (!parsed.success) {
       const weak = parsed.error.issues.some((issue) => issue.path.includes("password"));
       setError(t(`errors.${weak ? "weakPassword" : "generic"}`));
@@ -62,7 +77,11 @@ export function SignUpForm() {
         <p className="text-sm leading-6 text-muted">{t("signUp.subtitle")}</p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
