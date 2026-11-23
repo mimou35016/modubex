@@ -19,6 +19,7 @@ export const auditActions = {
   signInSuccess: "auth.sign_in.success",
   signInFailed: "auth.sign_in.failed",
   signOut: "auth.sign_out",
+  authPasswordChanged: "auth.password.changed",
   invitationCreated: "auth.invitation.created",
   invitationAccepted: "auth.invitation.accepted",
   usersInvited: "users.invited",
@@ -26,6 +27,7 @@ export const auditActions = {
   usersDeactivated: "users.deactivated",
   usersRoleChanged: "users.role.changed",
   usersSessionRevoked: "users.session.revoked",
+  profileUpdated: "profile.updated",
   rolesCreated: "roles.created",
   rolesUpdated: "roles.updated",
   rolesDeleted: "roles.deleted",
@@ -39,6 +41,8 @@ export const auditActions = {
   modulesDisabled: "modules.disabled",
   modulesSettingsUpdated: "modules.settings.updated",
   modulesUninstalled: "modules.uninstalled",
+  filesUploaded: "files.uploaded",
+  filesDeleted: "files.deleted",
 } as const;
 
 export type CoreAuditAction = (typeof auditActions)[keyof typeof auditActions];

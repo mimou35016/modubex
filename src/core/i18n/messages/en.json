@@ -146,6 +146,36 @@
       "rateLimited": "Too many attempts. Please wait before trying again."
     }
   },
+  "mail": {
+    "subject": {
+      "verification": "Verify your email address",
+      "passwordReset": "Reset your password",
+      "invitation": "Invitation to join"
+    },
+    "body": {
+      "verification": "Hello {email},\n\nVerify your email address to finish setting up your {appName} account: {url}\n\nIf you did not request this message, you can ignore it.",
+      "passwordReset": "Hello {email},\n\nWe received a request to reset the password for your {appName} account. Choose a new password here: {url}\n\nIf you did not request this message, you can ignore it.",
+      "invitation": "Hello {email},\n\nYou have been invited to join {appName}. Accept the invitation here: {url}\n\nIf this invitation was not meant for you, you can ignore it."
+    }
+  },
+  "files": {
+    "avatar": "Profile photo",
+    "logo": "Site logo",
+    "avatarHelp": "Use a square PNG, JPG, or WebP image for your profile photo.",
+    "logoHelp": "Use a PNG, JPG, or WebP image for the app shell logo.",
+    "uploadAvatar": "Upload photo",
+    "removeAvatar": "Remove photo",
+    "uploadLogo": "Upload logo",
+    "removeLogo": "Remove logo",
+    "uploaded": "File uploaded.",
+    "removed": "File removed.",
+    "invalidType": "That file type is not allowed.",
+    "tooLarge": "That file is too large.",
+    "noFile": "Choose a file first.",
+    "current": "Current file",
+    "remove": "Remove",
+    "actionError": "The file action could not be completed."
+  },
   "overview": {
     "title": "The foundation is in place.",
     "subtitle": "The foundation and identity layers are in place. Each check below reads real project state.",
@@ -176,11 +206,49 @@
     "modulesInstalled": "Installed modules",
     "modulesEnabled": "Enabled modules",
     "modulesAvailable": "Available modules",
+    "users": "Users",
+    "activeSessions": "Active sessions",
+    "recentAudit": "Recent audit",
+    "noAudit": "No recent audit activity.",
+    "viewAudit": "View audit logs",
     "locales": {
       "en": "English",
       "fr": "French",
       "ar": "Arabic"
     }
+  },
+  "profile": {
+    "title": "Your profile",
+    "subtitle": "Manage your account details, password, and active sessions.",
+    "accountTitle": "Personal details",
+    "nameLabel": "Full name",
+    "nameSubmit": "Save name",
+    "nameSaved": "Your name has been updated.",
+    "avatarTitle": "Profile photo",
+    "passwordTitle": "Password",
+    "passwordSubmit": "Change password",
+    "passwordSaved": "Your password has been changed.",
+    "twoFactorTitle": "Two-factor authentication",
+    "twoFactorEnabled": "Enabled",
+    "twoFactorDisabled": "Not enabled",
+    "twoFactorManage": "Manage two-factor authentication",
+    "twoFactorEnable": "Set up two-factor authentication",
+    "twoFactorChallenge": "Verify a code",
+    "sessionsTitle": "Active sessions",
+    "sessionsHint": "Revoke any session you no longer recognize.",
+    "noSessions": "There are no active sessions.",
+    "currentSession": "This session",
+    "revokeSession": "Revoke",
+    "sessionRevoked": "Session revoked.",
+    "createdAt": "Created",
+    "ipAddress": "IP address",
+    "userAgent": "Device",
+    "expiresAt": "Expires",
+    "noValue": "Not provided",
+    "invalidName": "Enter a valid name.",
+    "sessionNotFound": "That session is no longer active.",
+    "weakPassword": "Choose a password that meets the policy.",
+    "genericError": "The profile action could not be completed."
   },
   "rbac": {
     "title": "Roles and permissions",

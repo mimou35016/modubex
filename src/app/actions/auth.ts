@@ -1,15 +1,18 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { acceptInvitationSchema, invitationRoleLookup, inviteSchema } from "@/core/auth/schemas";
 import { getSession, PermissionDeniedError, requirePermission } from "@/core/auth/dal";
 import { audit, auditActions, type AuditActor } from "@/core/audit";
 import { env } from "@/core/config/env";
+import { defaultLocale, isLocale, type Locale } from "@/core/i18n/locales";
 import { logger } from "@/core/logging/logger";
+import { sendMail } from "@/core/mail";
 import { ownerAssignmentPermissionKey } from "@/core/rbac/permissions";
+import { getDefaultLocale, getSettingValue } from "@/core/settings/service";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -38,6 +41,30 @@ async function invitationActor(session: InvitationSession): Promise<AuditActor> 
     email: session.user.email,
     ...(await requestAuditContext()),
   };
+}
+
+async function mailContext(): Promise<{ locale: Locale; appName: string }> {
+  const cookieStore = await cookies();
+  const requested = cookieStore.get("NEXT_LOCALE")?.value;
+  let locale: Locale = defaultLocale;
+  if (isLocale(requested)) {
+    locale = requested;
+  } else {
+    try {
+      const configured = await getDefaultLocale();
+      if (isLocale(configured)) locale = configured;
+    } catch {
+      // The database may not be available during bootstrap.
+    }
+  }
+
+  let appName = "Modubex";
+  try {
+    appName = await getSettingValue("site.name");
+  } catch {
+    // Keep the static brand when settings are unavailable.
+  }
+  return { locale, appName };
 }
 
 const verifyEmailTokenSchema = z.object({
@@ -158,6 +185,23 @@ export async function createInvitationAction(
     invitationId: invitation.id,
     roleId: role.id,
   });
+
+  // Delivery is best-effort: the invitation is already persisted and the
+  // accept URL stays in the response as the UI fallback.
+  const { locale, appName } = await mailContext();
+  const delivery = await sendMail({
+    to: email,
+    template: "invitation",
+    locale,
+    params: { url: acceptUrl, appName, email },
+  });
+  if (!delivery.ok) {
+    logger.warn("Invitation email delivery failed", {
+      milestone: "M5",
+      invitationId: invitation.id,
+      error: delivery.error,
+    });
+  }
 
   const result: InvitationActionResult = { ok: true, acceptUrl };
   return result;

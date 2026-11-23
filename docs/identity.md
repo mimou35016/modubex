@@ -41,22 +41,20 @@ Boolean variables accept `true`/`false` strings. No OAuth button is rendered for
 - **Challenge** during sign-in: when TOTP is enabled, the user must enter a current code from their authenticator app.
 - **Enforcement** is controlled by `AUTH_2FA_REQUIRED`. With the default `false`, 2FA is opt-in; with `true`, enrollment is mandatory via the `requireSession()` redirect described above.
 
-## Email verification and password reset (no mail service in M1)
+## Email verification and password reset (M1 logging → M5 delivery)
 
-There is deliberately **no mail adapter in M1**. When verification, password reset, or invitation delivery is requested:
+In M1 there was deliberately **no mail adapter**: Better Auth (or the invitation code) generated the link/token and the delivery callback wrote it to the structured logger (`src/core/logging/logger.ts`), with the token redacted in production. That was an intentional bootstrap trade-off, not the current behavior.
 
-- Better Auth (or the invitation code) generates the link/token.
-- The delivery callback writes the link/token to the structured logger (`src/core/logging/logger.ts`). The token is **redacted in production**; in local development it can be read from the server log to complete the flow.
-- No email is actually sent. This is an intentional M1 trade-off; **M5.1 introduces `sendMail()`** with an SMTP default and localized templates.
+**M5 now delivers these messages through `sendMail()`** in `src/core/mail/`. `MAIL_DRIVER=smtp` (the default) sends via the configured SMTP server; `MAIL_DRIVER=log` records only message metadata in the application log. Verification, password-reset, and invitation messages use localized templates (`mail.subject.*` / `mail.body.*` in `en`, `fr`, `ar`, with an English fallback). Tokens and URLs are **never logged**: the auth bridge logs `[redacted]` placeholders for link and token, the log driver records only subject/length/HTML presence, and delivery errors pass through `redactMailSecrets()`. Delivery is best-effort and never rolls back the request that triggered it; invitation links remain available as a fallback in the action response when mail is unavailable. See [`developer-guide.md`](developer-guide.md#mail-adapter-m5) for the adapter contract and local Mailpit setup.
 
-Verification and reset links are therefore testable locally from logs only. Do not ship this behavior to real users.
+Verification and reset links can be exercised locally with Mailpit on `localhost:1025` (the SMTP default) or by setting `MAIL_DRIVER=log` to confirm that delivery was attempted.
 
 ## Invitations
 
 Invitations use a **custom Invitation model**, not the Better Auth organization plugin.
 
 1. A signed-in user creates an invitation at `/invite` (session-protected, in the `(app)` group).
-2. The invitation produces a tokenized link, delivered through the logging callback described above.
+2. The invitation produces a tokenized link, delivered through the mail adapter described above. The invitation is persisted before delivery, and the accept URL is also returned in the action response as a fallback if delivery fails.
 3. The recipient opens `/accept-invitation?token=...` and submits a name and password. Acceptance creates the account through Better Auth when the email is new (or reuses an existing email); that sign-up happens first, with a compensating delete if the later step fails. Role assignment, invitation consumption, and the audit entries are then committed in one transaction — no separate sign-up or sign-in step is needed.
 
 The invitation stores the selected `Role.id` (with the legacy role key mirrored for compatibility), so custom roles are granted correctly and role key changes do not affect pending invitations. Permissions are derived from `UserRole` rows on every request, so the invitee's access applies immediately after sign-in without a re-login. The app is single-tenant by default but the data model remains workspace-scope-ready.

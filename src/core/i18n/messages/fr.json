@@ -146,6 +146,36 @@
       "rateLimited": "Trop de tentatives. Veuillez patienter avant de réessayer."
     }
   },
+  "mail": {
+    "subject": {
+      "verification": "Vérifiez votre adresse e-mail",
+      "passwordReset": "Réinitialisez votre mot de passe",
+      "invitation": "Invitation à rejoindre"
+    },
+    "body": {
+      "verification": "Bonjour {email},\n\nVérifiez votre adresse e-mail pour terminer la configuration de votre compte {appName} : {url}\n\nSi cette demande ne vient pas de vous, ignorez ce message.",
+      "passwordReset": "Bonjour {email},\n\nUne demande de réinitialisation du mot de passe de votre compte {appName} a été reçue. Choisissez un nouveau mot de passe ici : {url}\n\nSi cette demande ne vient pas de vous, ignorez ce message.",
+      "invitation": "Bonjour {email},\n\nVous avez été invité à rejoindre {appName}. Acceptez cette invitation ici : {url}\n\nSi cette invitation ne vous concernait pas, ignorez ce message."
+    }
+  },
+  "files": {
+    "avatar": "Photo de profil",
+    "logo": "Logo du site",
+    "avatarHelp": "Utilisez une image carrée PNG, JPG ou WebP pour votre photo de profil.",
+    "logoHelp": "Utilisez une image PNG, JPG ou WebP pour le logo de l’application.",
+    "uploadAvatar": "Téléverser la photo",
+    "removeAvatar": "Supprimer la photo",
+    "uploadLogo": "Téléverser le logo",
+    "removeLogo": "Supprimer le logo",
+    "uploaded": "Fichier téléversé.",
+    "removed": "Fichier supprimé.",
+    "invalidType": "Ce type de fichier n’est pas autorisé.",
+    "tooLarge": "Ce fichier est trop volumineux.",
+    "noFile": "Choisissez d’abord un fichier.",
+    "current": "Fichier actuel",
+    "remove": "Supprimer",
+    "actionError": "L’action sur le fichier n’a pas pu être effectuée."
+  },
   "overview": {
     "title": "Les fondations sont en place.",
     "subtitle": "Les fondations et l'identité sont en place. Chaque vérification ci-dessous lit l'état réel du projet.",
@@ -176,11 +206,49 @@
     "modulesInstalled": "Modules installés",
     "modulesEnabled": "Modules activés",
     "modulesAvailable": "Modules disponibles",
+    "users": "Utilisateurs",
+    "activeSessions": "Sessions actives",
+    "recentAudit": "Audit récent",
+    "noAudit": "Aucune activité d’audit récente.",
+    "viewAudit": "Voir les journaux d’audit",
     "locales": {
       "en": "Anglais",
       "fr": "Français",
       "ar": "Arabe"
     }
+  },
+  "profile": {
+    "title": "Votre profil",
+    "subtitle": "Gérez vos informations personnelles, votre mot de passe et vos sessions actives.",
+    "accountTitle": "Informations personnelles",
+    "nameLabel": "Nom complet",
+    "nameSubmit": "Enregistrer le nom",
+    "nameSaved": "Votre nom a été mis à jour.",
+    "avatarTitle": "Photo de profil",
+    "passwordTitle": "Mot de passe",
+    "passwordSubmit": "Changer le mot de passe",
+    "passwordSaved": "Votre mot de passe a été modifié.",
+    "twoFactorTitle": "Authentification à deux facteurs",
+    "twoFactorEnabled": "Activée",
+    "twoFactorDisabled": "Non activée",
+    "twoFactorManage": "Gérer l’authentification à deux facteurs",
+    "twoFactorEnable": "Configurer l’authentification à deux facteurs",
+    "twoFactorChallenge": "Vérifier un code",
+    "sessionsTitle": "Sessions actives",
+    "sessionsHint": "Révoquez toute session que vous ne reconnaissez plus.",
+    "noSessions": "Il n’y a aucune session active.",
+    "currentSession": "Cette session",
+    "revokeSession": "Révoquer",
+    "sessionRevoked": "Session révoquée.",
+    "createdAt": "Créée",
+    "ipAddress": "Adresse IP",
+    "userAgent": "Appareil",
+    "expiresAt": "Expire",
+    "noValue": "Non fournie",
+    "invalidName": "Saisissez un nom valide.",
+    "sessionNotFound": "Cette session n’est plus active.",
+    "weakPassword": "Choisissez un mot de passe conforme à la stratégie.",
+    "genericError": "L’action sur le profil n’a pas pu être effectuée."
   },
   "rbac": {
     "title": "Rôles et permissions",

@@ -21,7 +21,7 @@ Runtime settings are database state and take effect without a restart. Infrastru
 
 Password, 2FA, and audit-retention defaults come from env values at bootstrap; numeric defaults are clamped into the registry bounds so a permissive environment cannot seed an invalid runtime value. `ensureDefaultSettings()` is create-only (`createMany` with `skipDuplicates`), so `npm run db:seed` preserves edited values.
 
-`infrastructureRegistry` is separate and frozen. It exposes `infrastructure.databaseUrl`, `infrastructure.authUrl`, `infrastructure.authSecret`, `infrastructure.passwordMinBootstrap`, and `infrastructure.auditRetentionBootstrap` with a masked `configured` boolean plus `sensitive` and `restartRequired` flags. No environment value is stored in, or returned by, the registry; `updateSettings()` rejects both infrastructure and unknown keys.
+`infrastructureRegistry` is separate and frozen. It exposes `infrastructure.databaseUrl`, `infrastructure.authUrl`, `infrastructure.authSecret`, `infrastructure.passwordMinBootstrap`, and `infrastructure.auditRetentionBootstrap` with a masked `configured` boolean plus `sensitive` and `restartRequired` flags. No environment value is stored in, or returned by, the registry; `updateSettings()` rejects both infrastructure and unknown keys. M5 mail and storage configuration (`MAIL_DRIVER`, `SMTP_*`, `STORAGE_DRIVER`, `STORAGE_*`) is likewise env-only infrastructure values: there is no `Setting` row and no editable control for it.
 
 ## Reads, writes, and invalidation
 
@@ -36,7 +36,7 @@ Password, 2FA, and audit-retention defaults come from env values at bootstrap; n
 
 | Route                            | Contents                                                                                               |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `/settings/site`                 | Site name and tagline                                                                                  |
+| `/settings/site`                 | Site name, tagline, and site-logo upload (stored as a `FileAsset`, not a runtime setting)              |
 | `/settings/seo`                  | SEO description and title suffix                                                                       |
 | `/settings/performance`          | Cache-read status and, for Pro/Enterprise, a link to advanced tuning                                   |
 | `/settings/performance/advanced` | `performance.cacheReads` editing; requires `settings.advancedPerformance` as well as `settings.update` |
@@ -53,3 +53,4 @@ Password, 2FA, and audit-retention defaults come from env values at bootstrap; n
 - Password rules are resolved live by Better Auth hooks through `getPasswordRules()`, and `requireSession()` redirects users without 2FA to enrollment when `security.requireTwoFactor` is on. Sign-up and reset forms use the same rules.
 - `audit.retentionDays` is read by `/audit` for its retention badge and by the explicit purge action; `0` means nothing is eligible for deletion and the purge writes its own `audit.purged` entry.
 - `workspace.timeZone` is shown resolved on its settings page. Infrastructure values remain env-only and read-only, and entries that need a restart are labeled as such.
+- The site logo is **not** a runtime setting: it is a `FileAsset` uploaded under `/settings/site` (requires `settings.update`), with bytes in the configured storage adapter and public serving through `/api/files/<id>`. Replacing it removes the previous object; the upload is audited as `files.uploaded` / `files.deleted`.

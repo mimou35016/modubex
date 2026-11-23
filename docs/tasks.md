@@ -72,15 +72,15 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 
 ## M5 — Dashboard & adapters
 
-**Exit:** AC11; no fake UI in shipped pages.
+**Exit:** AC11; no fake UI in shipped pages. **Status: complete. Next: M6 — Example module & quality gates.**
 
-- M5.1 `sendMail()` adapter interface + SMTP default; localized verification/reset/invitation templates; log failures.
-- M5.2 Storage adapter (`put`/`get`/`delete`) with local disk and S3-compatible implementations.
-- M5.3 Avatar and logo uploads with server-side type/size validation and permission-aware serving.
-- M5.4 Overview page from live data (users, modules, plan, recent audit) — no mock metrics.
-- M5.5 Profile page: name, avatar, password, 2FA, active sessions.
-- M5.6 Permission-gate every page and interaction; responsive and keyboard/RTL accessibility pass.
-- M5.7 Manual zero-fake-UI sweep: every control has a real handler and persisted effect.
+- [x] M5.1 `sendMail()` adapter interface + SMTP default; localized verification/reset/invitation templates; log failures.
+- [x] M5.2 Storage adapter (`put`/`get`/`delete`) with local disk and S3-compatible implementations.
+- [x] M5.3 Avatar and logo uploads with server-side type/size validation and permission-aware serving.
+- [x] M5.4 Overview page from live data (users, modules, plan, recent audit) — no mock metrics.
+- [x] M5.5 Profile page: name, avatar, password, 2FA, active sessions.
+- [x] M5.6 Permission-gate every page and interaction; responsive and keyboard/RTL accessibility pass.
+- [x] M5.7 Manual zero-fake-UI sweep: every control has a real handler and persisted effect.
 
 ## M6 — Example module & quality gates
 

@@ -18,9 +18,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Explicitly target the generated icon route so the static favicon.ico file is
+// not preferred by browsers after a new logo is uploaded.
+const brandIcons: Metadata["icons"] = {
+  icon: { url: "/icon", type: "image/png", sizes: "64x64" },
+  shortcut: "/icon",
+};
+
 const fallbackMetadata: Metadata = {
   title: "Modubex",
   description: "A lean, modular foundation for web applications and admin dashboards.",
+  icons: brandIcons,
 };
 
 async function resolveLocale(): Promise<Locale> {
@@ -48,6 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: { default: siteName, template: `%s — ${titleSuffix}` },
       description: description || fallbackMetadata.description,
+      icons: brandIcons,
     };
   } catch {
     return fallbackMetadata;

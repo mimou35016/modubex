@@ -61,6 +61,9 @@ export async function AppShell({
           <NavLink href="/" exact className={mobileLink} activeClassName={mobileActive}>
             {t("overview")}
           </NavLink>
+          <NavLink href="/profile" exact className={mobileLink} activeClassName={mobileActive}>
+            {t("areas.profile")}
+          </NavLink>
           {canSeeModules ? (
             <NavLink href="/modules" className={mobileLink} activeClassName={mobileActive}>
               {tModules("navLabel")}

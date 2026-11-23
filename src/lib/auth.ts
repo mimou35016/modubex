@@ -7,8 +7,10 @@ import { z } from "zod";
 import { audit } from "@/core/audit";
 import { configurePasswordRulesResolver, validatePasswordWithSettings } from "@/core/auth/schemas";
 import { env } from "@/core/config/env";
+import { defaultLocale, isLocale, type Locale } from "@/core/i18n/locales";
 import { logger } from "@/core/logging/logger";
-import { getPasswordRules } from "@/core/settings/service";
+import { sendMail } from "@/core/mail";
+import { getDefaultLocale, getPasswordRules, getSettingValue } from "@/core/settings/service";
 import { prisma } from "@/lib/prisma";
 
 // Server-only wiring: validation uses live DB settings while client schemas
@@ -16,9 +18,9 @@ import { prisma } from "@/lib/prisma";
 configurePasswordRulesResolver(getPasswordRules);
 
 const deliverySchema = z.object({
-  user: z.object({ id: z.string(), email: z.string() }),
-  url: z.string(),
-  token: z.string(),
+  user: z.object({ id: z.string().min(1), email: z.email() }),
+  url: z.string().min(1),
+  token: z.string().min(1),
 });
 
 const signInBodySchema = z.object({
@@ -46,24 +48,88 @@ const PASSWORD_PATHS = new Set([
   "/set-password",
 ]);
 
-function redact(value: string): string {
-  return env.NODE_ENV === "production" ? "[redacted]" : value;
+function localeFromRequest(request?: Request): Locale | undefined {
+  const cookieHeader = request?.headers.get("cookie") ?? "";
+  const cookieMatch = /(?:^|;\s*)NEXT_LOCALE=([^;]+)/.exec(cookieHeader);
+  if (cookieMatch) {
+    const requested = decodeURIComponent(cookieMatch[1] ?? "");
+    if (isLocale(requested)) return requested;
+  }
+
+  const acceptLanguage = request?.headers.get("accept-language");
+  const preferred = acceptLanguage?.split(",")[0]?.split(";")[0]?.trim();
+  if (preferred && isLocale(preferred)) return preferred;
+  return undefined;
 }
 
-function logDelivery(kind: "verification" | "password-reset", input: unknown): void {
-  const parsed = deliverySchema.safeParse(input);
-  if (!parsed.success) return;
+async function mailLocale(request?: Request): Promise<Locale> {
+  const fromRequest = localeFromRequest(request);
+  if (fromRequest) return fromRequest;
+
+  try {
+    const configured = await getDefaultLocale();
+    if (isLocale(configured)) return configured;
+  } catch {
+    // Settings may be unavailable during bootstrap; keep the static default.
+  }
+  return defaultLocale;
+}
+
+async function mailAppName(): Promise<string> {
+  try {
+    return await getSettingValue("site.name");
+  } catch {
+    return "Modubex";
+  }
+}
+
+async function deliverAuthMail(
+  template: "verification" | "passwordReset",
+  data: unknown,
+  request?: Request,
+): Promise<void> {
+  const parsed = deliverySchema.safeParse(data);
+  if (!parsed.success) {
+    logger.warn("Mail delivery input rejected", {
+      milestone: "M5",
+      template,
+      error: "invalid delivery payload",
+    });
+    return;
+  }
+
+  const [locale, appName] = await Promise.all([mailLocale(request), mailAppName()]);
+  const result = await sendMail({
+    to: parsed.data.user.email,
+    template,
+    locale,
+    params: {
+      url: parsed.data.url,
+      appName,
+      email: parsed.data.user.email,
+    },
+  });
 
   logger.info(
-    kind === "verification" ? "Email verification requested" : "Password reset requested",
+    template === "verification" ? "Email verification requested" : "Password reset requested",
     {
-      milestone: "M1",
+      milestone: "M5",
       userId: parsed.data.user.id,
       email: parsed.data.user.email,
-      url: redact(parsed.data.url),
-      token: redact(parsed.data.token),
+      template,
+      url: "[redacted]",
+      token: "[redacted]",
     },
   );
+
+  if (!result.ok) {
+    logger.error("Mail delivery failed", {
+      milestone: "M5",
+      template,
+      userId: parsed.data.user.id,
+      error: result.error,
+    });
+  }
 }
 
 export const auth = betterAuth({
@@ -77,14 +143,14 @@ export const auth = betterAuth({
     // The live policy is enforced in hooks.before; keep Better Auth's range wide.
     minPasswordLength: 1,
     maxPasswordLength: 256,
-    sendResetPassword: async (data) => {
-      logDelivery("password-reset", data);
+    sendResetPassword: async (data, request) => {
+      await deliverAuthMail("passwordReset", data, request);
     },
   },
 
   emailVerification: {
-    sendVerificationEmail: async (data) => {
-      logDelivery("verification", data);
+    sendVerificationEmail: async (data, request) => {
+      await deliverAuthMail("verification", data, request);
     },
   },
 

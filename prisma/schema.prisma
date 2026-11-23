@@ -31,6 +31,7 @@ model User {
   twofactors       TwoFactor[]
   // RBAC is authoritative; `role` above is kept for Better Auth compatibility.
   roles            UserRole[]
+  files            FileAsset[]
 
   @@unique([email])
   @@map("user")
@@ -265,4 +266,23 @@ model ModuleInstall {
 
   @@index([workspaceId])
   @@map("moduleInstall")
+}
+
+/// Core uploaded file metadata. Bytes live in the configured storage adapter;
+/// only the storage key and ownership metadata are persisted here.
+model FileAsset {
+  id          String   @id @default(cuid())
+  storageKey  String   @unique
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  purpose     String
+  contentType String
+  size        Int
+  workspaceId String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId, purpose])
+  @@index([workspaceId, purpose])
+  @@map("fileAsset")
 }

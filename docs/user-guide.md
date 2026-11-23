@@ -1,6 +1,6 @@
 # User guide
 
-This guide covers the day-to-day admin flows available through M4: users, roles, invitations, the module store, settings, the audit log, and licensing. Sign-in, two-factor authentication, password reset, and invitation acceptance are described in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), runtime settings are detailed in [`settings.md`](settings.md), and module authoring is in [`modules.md`](modules.md). Profile pages arrive in M5.
+This guide covers the day-to-day admin flows available through M5: users, roles, invitations, the module store, settings, the audit log, licensing, your profile, image uploads, and mail delivery. Sign-in, two-factor authentication, password reset, and invitation acceptance are described in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), runtime settings are detailed in [`settings.md`](settings.md), and module authoring is in [`modules.md`](modules.md).
 
 Every page is permission-gated. **UI actions are permission-aware**: controls you are not allowed to use are hidden or disabled, but the server checks the permission again for every action and direct request. Hiding a control never grants or removes access by itself.
 
@@ -19,13 +19,17 @@ Open **Users** from the sidebar (`/users`) with the `users.read` permission. The
 
 From `/users` you can:
 
-- **Invite a user** (`users.invite`): enter the email and choose the initial role, then submit. The invitation link is created and delivered through the logging callback used in M1/M2 (no mail service until M5.1); in local development, read the link from the server log. The invitee opens `/accept-invitation?token=...` and submits a name and password; the account is created (or an existing email reused), the chosen role is assigned, and the token is consumed. An expired or already-used token cannot be accepted. The role takes effect on the next request without a re-login. Granting Owner is additionally gated by `roles.assign_owner`. The flow is recorded as `auth.invitation.created`, `auth.invitation.accepted`, and `users.invited`.
+- **Invite a user** (`users.invite`): enter the email and choose the initial role, then submit. The invitation is persisted first, then its link is delivered by `sendMail()` through the configured mail driver (SMTP by default, or `log` for local capture). Delivery is best-effort: if it fails, the invitation still exists and the accept URL is returned in the form response as a fallback, so you can copy it from the invite page and send it yourself. The invitee opens `/accept-invitation?token=...` and submits a name and password; the account is created (or an existing email reused), the chosen role is assigned, and the token is consumed. An expired or already-used token cannot be accepted. The role takes effect on the next request without a re-login. Granting Owner is additionally gated by `roles.assign_owner`. The flow is recorded as `auth.invitation.created`, `auth.invitation.accepted`, and `users.invited`.
 - **Deactivate or reactivate an account** (`users.update`): a deactivated user cannot use their session until reactivated. These changes are recorded as `users.deactivated` and `users.activated`.
 - **Change a role** (`users.update`): pick a role from the available roles. The change is recorded as `users.role.changed`. Granting Owner requires `roles.assign_owner` and is therefore Owner-only.
 
 Open a row to reach `/users/[id]` for that user's detail: identity/profile fields and current role assignments require `users.read`; active sessions require `users.sessions.read`, and revoking one requires `users.update` (recorded as `users.session.revoked`). Role assignments and status changes take effect on the next request; no restart is needed.
 
 The **last active Owner** cannot be demoted, deactivated, or deleted. If you are the only Owner, promote someone else first. System roles cannot be renamed or given a different permission bundle.
+
+## Mail delivery
+
+Verification, password-reset, and invitation messages are rendered from localized templates (`mail.subject.*` and `mail.body.*` in `en`, `fr`, and `ar`) and sent through the `sendMail()` adapter. The driver is infrastructure-only: `MAIL_DRIVER=smtp` (the default) sends through the configured SMTP server, while `MAIL_DRIVER=log` records only message metadata in the application log instead of sending. Tokens and links are never written to logs, and delivery errors are logged with URLs and tokens redacted. A failed delivery never rolls back the request that triggered it: for invitations, the saved invitation and its accept link returned in the invite form remain the fallback. See [`developer-guide.md`](developer-guide.md#mail-adapter-m5) for the adapter contract.
 
 ## Roles: `/roles`
 
@@ -37,11 +41,29 @@ The **last active Owner** cannot be demoted, deactivated, or deleted. If you are
 
 Owner, Admin, and Member roles are shown as locked: no edit or delete action is offered for them, and a direct request is rejected by the server. Role lifecycle events are recorded as `roles.created`, `roles.updated`, and `roles.deleted`; assignments are recorded as `users.role.changed`, with before/after role and permission snapshots.
 
+## Profile: `/profile`
+
+Every signed-in user has a profile page at `/profile` (linked from the header and sidebar). It shows your avatar (or initials), email, and 2FA status, with working forms for:
+
+- **Name** — change your display name; the change is validated, audited, and reflected in the shell immediately.
+- **Avatar** — upload or remove your profile photo (see [Avatars and site logo](#avatars-and-site-logo)).
+- **Password** — enter your current password and a new one that satisfies the live security policy. Other sessions stay signed in.
+- **Two-factor authentication** — see whether TOTP is enabled, then follow the links to enroll/manage it or to run a challenge.
+- **Active sessions** — the most recent unexpired sessions with IP address, user agent, and dates; your current session is labeled. **Revoke** ends a session immediately and is audited.
+
+All of these actions are self-only: the session is the identity source, so crafting a request with someone else's user or session id cannot change their profile.
+
+## Avatars and site logo
+
+On `/profile`, **Profile photo** accepts a PNG, JPEG, WebP, or AVIF image up to 2 MB; uploading replaces your current avatar and **Remove** deletes it. On `/settings/site`, users with `settings.update` get the same controls for the **site logo** (same formats, up to 1 MB). SVG files are rejected even when renamed or given a safe content type.
+
+Uploads are validated on the server, stored through the configured storage adapter, and tracked as `FileAsset` records; replacing an image removes the previous object. Audit entries (`files.uploaded` and `files.deleted`) record metadata only — never file bytes or storage keys. Images are served by `/api/files/<id>` using an opaque asset id: the site logo is public branding, while avatars require a session and either ownership of the avatar or the `users.read` permission.
+
 ## Settings: `/settings`
 
 `/settings` redirects to **Site**. The settings layout requires `settings.read`; users without `settings.update` see read-only forms. Each save is validated, recorded as `settings.updated` with before/after values, and takes effect without a restart. See [`settings.md`](settings.md) for the full key list and service behavior.
 
-- **Site / SEO** — app name, tagline, and metadata defaults used across the shell and page titles.
+- **Site / SEO** — app name, tagline, and metadata defaults used across the shell and page titles, plus the site-logo upload (stored as a `FileAsset`, not a runtime setting).
 - **Performance** — shows whether cached settings reads are active. Pro and Enterprise users can open **Advanced** to change that switch; Free users cannot.
 - **Localization** — sets the default locale used when no `NEXT_LOCALE` cookie is set. The cookie still wins when present.
 - **Security** — sets password length and complexity rules and 2FA enforcement. Better Auth applies password rules immediately, and `requireSession()` sends users without 2FA to enrollment when enforcement is on.
@@ -67,7 +89,7 @@ Installing, enabling, disabling, changing settings, and both uninstall paths wri
 `/audit` (requires `audit.read`) is a live, read-only view of security and admin events. Filter by:
 
 - **User** — actor id or email.
-- **Action** — for example `auth.sign_in.failed`, `users.role.changed`, `users.deactivated`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`, `modules.installed`, `modules.uninstalled`.
+- **Action** — for example `auth.sign_in.failed`, `auth.password.changed`, `profile.updated`, `users.role.changed`, `users.deactivated`, `files.uploaded`, `files.deleted`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`, `modules.installed`, `modules.uninstalled`.
 - **Date range** — inclusive from/to timestamps.
 - **Module** — events attributed to a module.
 
@@ -84,6 +106,10 @@ The `/license` page is live. The sidebar link is shown with `license.read`; the 
 A fresh workspace is seeded on the **Pro** plan. Free covers core access, users, custom roles, audit viewing, and basic settings; Pro adds audit export, advanced performance tuning, and module-store eligibility; Enterprise adds premium-module eligibility. Plans are cumulative. **Advanced performance tuning is unavailable on Free.** Module installation is gated by `modules.store` (Pro+) and each module's own plan/entitlements (see [Modules](#modules-modules-app-store)).
 
 Changing the plan writes `license.plan.changed` to the audit log; adding or clearing a license key writes `license.key.updated` with only key _presence_ recorded — never the key itself. Local environment and infrastructure values stay env-only and read-only in the UI; the license plan and key are database state.
+
+## Dashboard overview: `/`
+
+The dashboard home (`/`) is live data, not a mock. It shows the current plan, site name, default locale, audit retention, and module counts from the database and the generated registry, plus a readiness checklist. With `users.read` you also see the total user count and active sessions; with `audit.read` you see the five most recent audit entries with links to the full viewer. Sections you lack permission for are omitted entirely rather than shown as empty placeholders.
 
 ## What "Forbidden" means
 

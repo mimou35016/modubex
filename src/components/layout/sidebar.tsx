@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/app/(app)/_components/nav-link";
 import { hasPermission, type PermissionKeys } from "@/app/(app)/_components/permissions";
+import { SiteLogo } from "@/components/brand/site-logo";
 
 type Props = {
   version: string;
@@ -36,7 +37,6 @@ export async function Sidebar({
 }: Props) {
   const t = await getTranslations("nav");
   const tModules = await getTranslations("modules");
-  const planned = [{ icon: UserRound, label: t("areas.profile"), milestone: "M5" }];
   const canSeeModules = hasPermission(permissions, "modules.read");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
@@ -48,9 +48,7 @@ export async function Sidebar({
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-e bg-surface md:flex">
       <div className="flex h-16 items-center gap-3 border-b px-6">
-        <div className="flex size-8 items-center justify-center rounded-md bg-accent font-mono text-xs font-bold text-accent-foreground">
-          MB
-        </div>
+        <SiteLogo />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold tracking-tight">{appName ?? t("appName")}</p>
           <p className="truncate font-mono text-[10px] text-muted">{tagline ?? t("foundation")}</p>
@@ -62,6 +60,16 @@ export async function Sidebar({
         <NavLink href="/" exact className={linkClass} activeClassName={activeClass}>
           <LayoutDashboard className="size-4" aria-hidden="true" />
           {t("overview")}
+        </NavLink>
+
+        <NavLink
+          href="/profile"
+          exact
+          className={`mt-1 ${linkClass}`}
+          activeClassName={activeClass}
+        >
+          <UserRound className="size-4" aria-hidden="true" />
+          {t("areas.profile")}
         </NavLink>
 
         {canInvite ? (
@@ -138,23 +146,6 @@ export async function Sidebar({
             ) : null}
           </>
         ) : null}
-
-        <p className="mt-8 px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
-          {t("planned")}
-        </p>
-        <ul className="space-y-1">
-          {planned.map((item) => (
-            <li
-              key={item.milestone + item.label}
-              className="flex items-center gap-3 px-3 py-2 text-sm text-muted"
-              title={t("comingLater")}
-            >
-              <item.icon className="size-4 opacity-70" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              <span className="font-mono text-[10px] opacity-70">{item.milestone}</span>
-            </li>
-          ))}
-        </ul>
       </nav>
 
       <div className="border-t px-6 py-4 font-mono text-[10px] text-muted">

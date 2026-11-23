@@ -27,6 +27,25 @@ const envSchema = z
     AUTH_REQUIRE_EMAIL_VERIFICATION: booleanFromEnv("false"),
     AUTH_2FA_REQUIRED: booleanFromEnv("false"),
 
+    // Mail delivery is infrastructure-only; credentials never reach runtime settings.
+    MAIL_DRIVER: z.enum(["smtp", "log"]).default("smtp"),
+    SMTP_HOST: z.string().default("localhost"),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(1025),
+    SMTP_SECURE: booleanFromEnv("false"),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASSWORD: z.string().optional(),
+    SMTP_FROM: z.string().default("Modubex <no-reply@modubex.local>"),
+
+    // File storage is infrastructure-only; buckets and keys stay env-only.
+    STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+    STORAGE_LOCAL_PATH: z.string().default(".data/uploads"),
+    STORAGE_S3_BUCKET: z.string().optional(),
+    STORAGE_S3_REGION: z.string().optional(),
+    STORAGE_S3_ENDPOINT: z.string().optional(),
+    STORAGE_S3_ACCESS_KEY_ID: z.string().optional(),
+    STORAGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+    STORAGE_S3_FORCE_PATH_STYLE: booleanFromEnv("false"),
+
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),

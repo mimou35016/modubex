@@ -1,29 +1,35 @@
-# Developer guide (M2–M4 seams)
+# Developer guide (M2–M5 seams)
 
-M2 adds permission checks, user/role management, and the full audit surface; M3 adds runtime settings and the entitlement/licensing foundation; M4 adds build-time bundled modules, the generated module registry, and the in-app module store. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, [`licensing.md`](licensing.md) covers plans and entitlements, [`settings.md`](settings.md) covers runtime configuration, [`modules.md`](modules.md) is the module authoring guide, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
+M2 adds permission checks, user/role management, and the full audit surface; M3 adds runtime settings and the entitlement/licensing foundation; M4 adds build-time bundled modules, the generated module registry, and the in-app module store; M5 adds the mail/storage adapters, validated file uploads and serving, live overview data, and profile actions. This page is the implementation reference; [`authorization.md`](authorization.md) is the behavior and vocabulary reference, [`licensing.md`](licensing.md) covers plans and entitlements, [`settings.md`](settings.md) covers runtime configuration, [`modules.md`](modules.md) is the module authoring guide, and [`identity.md`](identity.md) covers authentication. Snippets below show the seam contract — follow the exact exported signatures in the source if they evolve.
 
 ## File layout
 
-| Path                                                                                                               | Responsibility                                                                                                                                          |
-| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/core/rbac/permissions.ts`                                                                                     | Zod-validated permission catalog, `PermissionKey` type, system role bundles. Single source of truth for keys.                                           |
-| `src/core/rbac/service.ts`                                                                                         | DB-backed role/permission queries, effective-permission resolution, custom role mutations, last-owner invariant.                                        |
-| `src/core/auth/dal.ts`                                                                                             | `getSession`, `requireSession`, `getCurrentUser`, plus `requirePermission` and `requirePagePermission`.                                                 |
-| `src/core/audit/`                                                                                                  | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`.                      |
-| `src/core/entitlements/{plans,service,guards,schema}.ts`                                                           | Plan mapping, the single `getEntitlements()` seam, guards, and the license form schema.                                                                 |
-| `src/core/settings/{registry,service}.ts`                                                                          | Editable key descriptors, zod schemas, env-derived defaults, cached snapshot, and audited transactional updates.                                        |
-| `src/core/modules/` and `src/modules/<id>/`                                                                        | Module manifest schema, generated registry helpers, lifecycle service/actions, and bundled module code (routes, settings, messages, cleanup hook).      |
-| `src/modules/registry.generated.ts`                                                                                | Committed, generated list of bundled modules and their manifest metadata; produced by `npm run modules:generate`.                                       |
-| `src/app/actions/license.ts`                                                                                       | `license.manage`-guarded, zod-validated, audited license update.                                                                                        |
-| `src/app/actions/settings.ts`                                                                                      | `settings.update`-guarded, entitlement-aware, zod-validated settings update.                                                                            |
-| `src/app/(app)/settings/` and `src/app/(app)/_components/settings/`                                                | Settings pages and forms, including read-only infrastructure and Pro+ advanced performance.                                                             |
-| `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx`                                                | User list and detail pages.                                                                                                                             |
-| `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx`                                                     | Role management and audit viewer pages.                                                                                                                 |
-| `src/app/(app)/modules/`                                                                                           | Module store, generated module settings, and the generic bundled-route runner.                                                                          |
-| `src/app/actions/`                                                                                                 | Server actions for user, role, audit export, purge, license, settings, and module lifecycle mutations.                                                  |
-| `src/app/api/audit/`                                                                                               | CSV export handler(s), guarded on `audit.export`.                                                                                                       |
-| `prisma/schema.prisma`, `prisma/migrations/<timestamp>_rbac/`, `prisma/migrations/<timestamp>_invitation_role_id/` | `Role`, `Permission`, `RolePermission`, `UserRole` (all with `workspaceId` default `""`), audit changes, and the invitation `roleId` relation/backfill. |
-| `src/core/i18n/messages/{en,fr,ar}.json`, `tests/`                                                                 | New UI messages (core parity is mandatory) and RBAC/audit tests.                                                                                        |
+| Path                                                                                                                                                          | Responsibility                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/rbac/permissions.ts`                                                                                                                                | Zod-validated permission catalog, `PermissionKey` type, system role bundles. Single source of truth for keys.                                                        |
+| `src/core/rbac/service.ts`                                                                                                                                    | DB-backed role/permission queries, effective-permission resolution, custom role mutations, last-owner invariant.                                                     |
+| `src/core/auth/dal.ts`                                                                                                                                        | `getSession`, `requireSession`, `getCurrentUser`, plus `requirePermission` and `requirePagePermission`.                                                              |
+| `src/core/audit/`                                                                                                                                             | `audit.log()` (`audit.ts`), action vocabulary, query/filter helpers, CSV export, and retention purge; re-exported from `index.ts`.                                   |
+| `src/core/entitlements/{plans,service,guards,schema}.ts`                                                                                                      | Plan mapping, the single `getEntitlements()` seam, guards, and the license form schema.                                                                              |
+| `src/core/settings/{registry,service}.ts`                                                                                                                     | Editable key descriptors, zod schemas, env-derived defaults, cached snapshot, and audited transactional updates.                                                     |
+| `src/core/modules/` and `src/modules/<id>/`                                                                                                                   | Module manifest schema, generated registry helpers, lifecycle service/actions, and bundled module code (routes, settings, messages, cleanup hook).                   |
+| `src/modules/registry.generated.ts`                                                                                                                           | Committed, generated list of bundled modules and their manifest metadata; produced by `npm run modules:generate`.                                                    |
+| `src/app/actions/license.ts`                                                                                                                                  | `license.manage`-guarded, zod-validated, audited license update.                                                                                                     |
+| `src/app/actions/settings.ts`                                                                                                                                 | `settings.update`-guarded, entitlement-aware, zod-validated settings update.                                                                                         |
+| `src/app/(app)/settings/` and `src/app/(app)/_components/settings/`                                                                                           | Settings pages and forms, including read-only infrastructure and Pro+ advanced performance.                                                                          |
+| `src/app/(app)/users/page.tsx`, `src/app/(app)/users/[id]/page.tsx`                                                                                           | User list and detail pages.                                                                                                                                          |
+| `src/app/(app)/roles/page.tsx`, `src/app/(app)/audit/page.tsx`                                                                                                | Role management and audit viewer pages.                                                                                                                              |
+| `src/app/(app)/modules/`                                                                                                                                      | Module store, generated module settings, and the generic bundled-route runner.                                                                                       |
+| `src/app/actions/`                                                                                                                                            | Server actions for user, role, audit export, purge, license, settings, module lifecycle, file upload, and profile mutations.                                         |
+| `src/app/api/audit/`                                                                                                                                          | CSV export handler(s), guarded on `audit.export`.                                                                                                                    |
+| `src/core/mail/`                                                                                                                                              | `sendMail()` seam, SMTP/log adapters, localized templates, and secret redaction.                                                                                     |
+| `src/core/storage/`                                                                                                                                           | `StorageAdapter` (`put`/`get`/`delete`), local disk and S3-compatible drivers, zod key validation.                                                                   |
+| `src/core/files/`                                                                                                                                             | `FileAsset` service, upload validation, and pure authorization predicates.                                                                                           |
+| `src/core/dashboard/overview.ts`                                                                                                                              | `getOverviewData()` aggregation of live user/session and audit data.                                                                                                 |
+| `src/app/api/files/[id]/route.ts`                                                                                                                             | Permission-aware file serving by opaque `FileAsset` id.                                                                                                              |
+| `src/app/(app)/profile/` and `src/app/(app)/_components/profile/`                                                                                             | Profile page and its name/password/2FA/session/avatar forms.                                                                                                         |
+| `prisma/schema.prisma`, `prisma/migrations/<timestamp>_rbac/`, `prisma/migrations/<timestamp>_invitation_role_id/`, `prisma/migrations/<timestamp>_m5_files/` | `Role`, `Permission`, `RolePermission`, `UserRole` (all with `workspaceId` default `""`), audit changes, the invitation `roleId` relation/backfill, and `FileAsset`. |
+| `src/core/i18n/messages/{en,fr,ar}.json`, `tests/`                                                                                                            | New UI and mail template messages (core parity is mandatory) and RBAC/audit/adapter tests.                                                                           |
 
 ## Effective permissions
 
@@ -160,6 +166,67 @@ const timeZone = await getSettingValue("workspace.timeZone");
 
 To add a key: add its schema, descriptor, and default to the registry; add `en` / `fr` / `ar` messages; wire it into the relevant settings page; guard any new entitlement; and document it in [`settings.md`](settings.md). Existing databases can rely on the registry default until an edit upserts the row.
 
+## Mail adapter (M5)
+
+`src/core/mail/` is the single transactional-mail seam. `sendMail(input)` zod-parses `to`, `template` (`verification` | `passwordReset` | `invitation`), `locale` (`en` | `fr` | `ar`), and `params: { url, appName, email? }`, renders the template, calls the selected adapter, and **never throws** — it returns `{ ok: true }` or `{ ok: false, error }`.
+
+```ts
+interface MailAdapter {
+  send(message: PreparedMail): Promise<SendMailResult>;
+}
+type PreparedMail = { to: string; subject: string; text: string; html?: string };
+```
+
+- `MAIL_DRIVER=smtp` (default) selects the Nodemailer adapter; `MAIL_DRIVER=log` selects a development adapter that writes only metadata (subject, text length, HTML presence) to the structured log, never message content. `getMailDriver()`, `getMailAdapter()` (memoized), and `resetMailAdapterForTests(fake?)` expose selection; callers use `sendMail()`.
+- Env-only config: `MAIL_DRIVER`, `SMTP_FROM`, `SMTP_HOST` (`localhost`), `SMTP_PORT` (`1025`), `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`. Credentials never become runtime settings.
+- Template keys are `mail.subject.<template>` and `mail.body.<template>` in `src/core/i18n/messages/{en,fr,ar}.json`, with `{url}`, `{appName}`, and `{email}` placeholders. `renderMail()` uses next-intl with an inline English fallback and returns plain text plus escaped HTML. The template union is core-owned; modules must not extend it.
+- Failures are logged through `logger.error()` after `redactMailSecrets()` strips URLs and long hex tokens. The bridge in `src/lib/auth.ts` (`deliverAuthMail()` for Better Auth's `sendVerificationEmail` / `passwordReset` callbacks) logs `[redacted]` placeholders for link and token. Invitation creation calls `sendMail()` from `src/app/actions/auth.ts`; the invitation is persisted first and `acceptUrl` is returned in the action result as a fallback if delivery fails.
+
+## Storage adapter (M5)
+
+`src/core/storage/` exposes the vendor-neutral `StorageAdapter`:
+
+```ts
+interface StorageAdapter {
+  put(input: {
+    key: string;
+    contentType: string;
+    body: Buffer;
+    size: number;
+  }): Promise<{ key: string }>;
+  get(key: string): Promise<{ body: Buffer; contentType: string; size: number } | null>;
+  delete(key: string): Promise<void>;
+}
+```
+
+Use the stable `storage` delegate (or memoized `getStorageAdapter()`); `resetStorageAdapterForTests()` clears the cache. `STORAGE_DRIVER=local` (default) writes under `STORAGE_LOCAL_PATH` (`.data/uploads`) with a `.meta.json` sidecar for content type and staged temp files renamed into place; `STORAGE_DRIVER=s3` uses `@aws-sdk/client-s3` with `STORAGE_S3_BUCKET`, optional `STORAGE_S3_REGION` (default `us-east-1`), `STORAGE_S3_ENDPOINT` (for MinIO/LocalStack), `STORAGE_S3_ACCESS_KEY_ID`, `STORAGE_S3_SECRET_ACCESS_KEY`, and `STORAGE_S3_FORCE_PATH_STYLE`. All are env-only infrastructure values. Keys are relative POSIX paths: no leading `/`, no `\`, no `..`, no control characters, 1–512 chars. Both drivers throw `StorageError` (operation/key only) without vendor messages, endpoints, or credentials.
+
+## File uploads and serving (M5)
+
+- `FileAsset` (`prisma/schema.prisma`, migration `20261123030000_m5_files`) stores `id`, a unique `storageKey`, nullable `ownerId` → `User`, `purpose` (`avatar` | `site-logo`), `contentType`, `size`, `workspaceId` (`""`), and timestamps. Bytes stay in the storage adapter; audit snapshots carry metadata only.
+- `uploadFileSchema` in `src/core/files/service.ts` requires a `File`, a purpose, and an `ownerId` for avatars. Allowed types are PNG, JPEG, WebP, and AVIF; SVG is rejected by filename and by a byte-level head check even when the declared MIME is safe. Limits are 2 MB for avatars and 1 MB for site logos. `storageKeyFor()` builds `avatars/<ownerId>/<uuid>.<ext>` or `site/logo/<uuid>.<ext>`.
+- `uploadFile()` writes to storage, inserts the `FileAsset` row (deleting the object if the insert fails), audits `files.uploaded`, then removes prior assets for the same purpose/owner and audits `files.deleted`. `deleteFile()`, `getFileAsset()`, `getCurrentAvatar()`, and `getSiteLogo()` complete the service; every function zod-parses its input.
+- `src/app/actions/files.ts` gates avatar actions with `requireSession()` + `app.access` and self-ownership (`canManageOwnAvatar`), and site-logo actions with `requirePermission("settings.update")`. All four actions revalidate `/`, `/profile`, and `/settings/site`.
+- `GET /api/files/[id]` validates an opaque id (`^[A-Za-z0-9_-]+$`), looks up the `FileAsset` (never exposing storage keys), and requires a session for avatars; an avatar is readable only by its owner or a holder of `users.read` (`AVATAR_READ_PERMISSION`). Site logos are public. Responses send `Content-Type`, `Content-Length`, `Content-Disposition: inline`, `X-Content-Type-Options: nosniff`, and `Cache-Control` (`private` for avatars, `public` for logos); errors use `no-store`. The route is `runtime = "nodejs"`; the predicates in `src/core/files/authorization.ts` are pure and unit-testable.
+
+## Overview data (M5)
+
+`getOverviewData(permissionKeys)` in `src/core/dashboard/overview.ts` is the only seam for the dashboard home. It returns `users?: { total, activeSessions }` (counts from `prisma.user` and unexpired `prisma.session`) only with `users.read`, and `audit?: { entries }` (the five newest `AuditLog` rows) only with `audit.read`. Reads run in parallel and unauthorized sections are omitted, so the page renders no placeholders. The page in `src/app/(app)/page.tsx` combines that with `getEntitlements()`, `getSettingValue()`, `getModuleViews()`, and `getFoundationReadiness()`.
+
+## Profile actions (M5)
+
+`src/app/actions/profile.ts` is self-only: each action calls `requireSession()` and never trusts a user id from input.
+
+- `updateProfileNameAction()`: zod name (1–120) → Better Auth `auth.api.updateUser` → `profile.updated` audit with before/after name.
+- `changePasswordAction()`: current + new password, live `validatePasswordWithSettings()` policy, Better Auth `auth.api.changePassword` with `revokeOtherSessions: false`, `auth.password.changed` audit. Provider errors are never echoed or logged because they may quote the submitted password.
+- `revokeOwnSessionAction()`: the ownership predicate is part of the Prisma query, then Better Auth `auth.api.revokeSession` and a `users.session.revoked` audit with session metadata.
+
+All three use `audit.log({ ..., strict: true })` and revalidate `/profile` (the name action also refreshes the layout). 2FA links point to the existing `/two-factor/enroll` and `/two-factor` pages; avatar upload/removal uses the file actions above.
+
+## Local mail and storage (M5)
+
+Copy `.env.example` to `.env.local`. The defaults already work locally: `MAIL_DRIVER=smtp` with `SMTP_HOST=localhost` and `SMTP_PORT=1025` targets Mailpit — start it with `docker run -p 1025:1025 -p 8025:8025 axllent/mailpit` and read captured messages at http://localhost:8025. Set `MAIL_DRIVER=log` to capture only metadata in the application log instead. Storage defaults to `STORAGE_DRIVER=local` with `STORAGE_LOCAL_PATH=.data/uploads` under the project root — no bucket or credentials needed; for S3-compatible testing set `STORAGE_DRIVER=s3` plus the `STORAGE_S3_*` variables (and `STORAGE_S3_ENDPOINT` for MinIO/LocalStack). M7 adds the reference Docker Compose setup.
+
 ## Writing audit entries
 
 ```ts
@@ -207,4 +274,4 @@ npm run modules:check # committed module registry must be fresh
 npm run build
 ```
 
-CI order is `typecheck → lint → test → i18n:check → build`, with `npm run modules:check` also failing on a stale registry. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads. For entitlements, test plan mapping (cumulative keys and `settings.advancedPerformance`), `normalizePlan()` fallbacks, guard denials, and that a license mutation audits plan/key-presence changes without the raw key and invalidates the `license` tag. For settings, test registry defaults and validation, direct reads when caching is off, create-only seeding, and the update transaction's audit and cache invalidation. For modules, test manifest validation, generated-registry freshness, lifecycle permission/entitlement/dependency gates, disabled dependents blocking disable/uninstall, both uninstall data paths, and cache invalidation of permissions and messages.
+CI order is `typecheck → lint → test → i18n:check → build`, with `npm run modules:check` also failing on a stale registry. Add tests for guard rejection, custom-role escalation (`roles.assign_owner`), and the last-owner invariant; changing a permission bundle or assignment must invalidate cached reads. For entitlements, test plan mapping (cumulative keys and `settings.advancedPerformance`), `normalizePlan()` fallbacks, guard denials, and that a license mutation audits plan/key-presence changes without the raw key and invalidates the `license` tag. For settings, test registry defaults and validation, direct reads when caching is off, create-only seeding, and the update transaction's audit and cache invalidation. For modules, test manifest validation, generated-registry freshness, lifecycle permission/entitlement/dependency gates, disabled dependents blocking disable/uninstall, both uninstall data paths, and cache invalidation of permissions and messages. For M5, test localized template rendering and secret redaction (no URL or token in logs), mail driver selection and non-throwing failure results, storage key validation and both drivers, upload type/size/SVG rejection and replacement cleanup, file-serving authorization (owner / `users.read` / public logo), overview permission gating, and profile self-only actions including forged session ids.

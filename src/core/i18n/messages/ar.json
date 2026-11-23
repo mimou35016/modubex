@@ -146,6 +146,36 @@
       "rateLimited": "محاولات كثيرة جدًا. يُرجى الانتظار قبل المحاولة مرة أخرى."
     }
   },
+  "mail": {
+    "subject": {
+      "verification": "تحقق من بريدك الإلكتروني",
+      "passwordReset": "إعادة تعيين كلمة المرور",
+      "invitation": "دعوة للانضمام"
+    },
+    "body": {
+      "verification": "مرحبًا {email}،\n\nتحقق من بريدك الإلكتروني لإكمال إعداد حسابك في {appName}: {url}\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.",
+      "passwordReset": "مرحبًا {email}،\n\nتلقينا طلبًا لإعادة تعيين كلمة مرور حسابك في {appName}. اختر كلمة مرور جديدة هنا: {url}\n\nإذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.",
+      "invitation": "مرحبًا {email}،\n\nتمت دعوتك للانضمام إلى {appName}. اقبل الدعوة هنا: {url}\n\nإذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة."
+    }
+  },
+  "files": {
+    "avatar": "صورة الملف الشخصي",
+    "logo": "شعار الموقع",
+    "avatarHelp": "استخدم صورة مربعة بصيغة PNG أو JPG أو WebP لصورة ملفك الشخصي.",
+    "logoHelp": "استخدم صورة بصيغة PNG أو JPG أو WebP لشعار التطبيق.",
+    "uploadAvatar": "رفع الصورة",
+    "removeAvatar": "إزالة الصورة",
+    "uploadLogo": "رفع الشعار",
+    "removeLogo": "إزالة الشعار",
+    "uploaded": "تم رفع الملف.",
+    "removed": "تمت إزالة الملف.",
+    "invalidType": "نوع الملف هذا غير مسموح.",
+    "tooLarge": "الملف كبير جدًا.",
+    "noFile": "اختر ملفًا أولًا.",
+    "current": "الملف الحالي",
+    "remove": "إزالة",
+    "actionError": "تعذّر إكمال إجراء الملف."
+  },
   "overview": {
     "title": "الأساس جاهز.",
     "subtitle": "الأساس والهوية جاهزان. تقرأ كل تحقق أدناه الحالة الحقيقية للمشروع.",
@@ -176,11 +206,49 @@
     "modulesInstalled": "الوحدات المثبتة",
     "modulesEnabled": "الوحدات المفعّلة",
     "modulesAvailable": "الوحدات المتاحة",
+    "users": "المستخدمون",
+    "activeSessions": "الجلسات النشطة",
+    "recentAudit": "التدقيق الأخير",
+    "noAudit": "لا يوجد نشاط تدقيق حديث.",
+    "viewAudit": "عرض سجلات التدقيق",
     "locales": {
       "en": "الإنجليزية",
       "fr": "الفرنسية",
       "ar": "العربية"
     }
+  },
+  "profile": {
+    "title": "ملفك الشخصي",
+    "subtitle": "إدارة بيانات حسابك وكلمة المرور والجلسات النشطة.",
+    "accountTitle": "البيانات الشخصية",
+    "nameLabel": "الاسم الكامل",
+    "nameSubmit": "حفظ الاسم",
+    "nameSaved": "تم تحديث اسمك.",
+    "avatarTitle": "صورة الملف الشخصي",
+    "passwordTitle": "كلمة المرور",
+    "passwordSubmit": "تغيير كلمة المرور",
+    "passwordSaved": "تم تغيير كلمة المرور.",
+    "twoFactorTitle": "المصادقة الثنائية",
+    "twoFactorEnabled": "مفعّلة",
+    "twoFactorDisabled": "غير مفعّلة",
+    "twoFactorManage": "إدارة المصادقة الثنائية",
+    "twoFactorEnable": "إعداد المصادقة الثنائية",
+    "twoFactorChallenge": "التحقق من رمز",
+    "sessionsTitle": "الجلسات النشطة",
+    "sessionsHint": "ألغِ أي جلسة لم تعد تتعرف عليها.",
+    "noSessions": "لا توجد جلسات نشطة.",
+    "currentSession": "هذه الجلسة",
+    "revokeSession": "إلغاء",
+    "sessionRevoked": "تم إلغاء الجلسة.",
+    "createdAt": "تاريخ الإنشاء",
+    "ipAddress": "عنوان IP",
+    "userAgent": "الجهاز",
+    "expiresAt": "تنتهي",
+    "noValue": "غير متوفر",
+    "invalidName": "أدخل اسمًا صالحًا.",
+    "sessionNotFound": "لم تعد هذه الجلسة نشطة.",
+    "weakPassword": "اختر كلمة مرور تتوافق مع السياسة.",
+    "genericError": "تعذّر إكمال إجراء الملف الشخصي."
   },
   "rbac": {
     "title": "الأدوار والصلاحيات",

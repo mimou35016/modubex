@@ -1,24 +1,33 @@
-import { getTranslations } from "next-intl/server";
+import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { ModuleStateValue } from "@/app/(app)/_components/modules/module-view";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getCurrentPermissionKeys, requireSession } from "@/core/auth/dal";
+import { getOverviewData } from "@/core/dashboard/overview";
 import { getEntitlements } from "@/core/entitlements/service";
-import { getModuleViews } from "@/core/modules/state";
 import { getFoundationReadiness } from "@/core/foundation/readiness";
+import { getModuleViews } from "@/core/modules/state";
 import { getSettingValue } from "@/core/settings/service";
 import { cn } from "@/lib/utils";
+import { hasPermission } from "./_components/permissions";
 
 export default async function Home() {
+  await requireSession();
+  const permissionKeys = await getCurrentPermissionKeys();
   const t = await getTranslations("overview");
   const tLicense = await getTranslations("license");
+  const locale = await getLocale();
   const { checks, milestones, currentMilestone, version } = getFoundationReadiness();
-  const [entitlements, siteName, defaultLocale, retentionDays, moduleViews] = await Promise.all([
-    getEntitlements(),
-    getSettingValue("site.name"),
-    getSettingValue("localization.defaultLocale"),
-    getSettingValue("audit.retentionDays"),
-    getModuleViews(),
-  ]);
+  const [entitlements, siteName, defaultLocale, retentionDays, moduleViews, overview] =
+    await Promise.all([
+      getEntitlements(),
+      getSettingValue("site.name"),
+      getSettingValue("localization.defaultLocale"),
+      getSettingValue("audit.retentionDays"),
+      getModuleViews(),
+      getOverviewData(permissionKeys),
+    ]);
   const countModules = (state: ModuleStateValue) =>
     moduleViews.filter((view) => view.state === state).length;
   const summary = [
@@ -33,6 +42,12 @@ export default async function Home() {
     { label: t("modulesEnabled"), value: String(countModules("enabled")) },
     { label: t("modulesAvailable"), value: String(countModules("available")) },
   ];
+  const canReadUsers = hasPermission(permissionKeys, "users.read");
+  const canReadAudit = hasPermission(permissionKeys, "audit.read");
+  const dateFormat = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -96,6 +111,89 @@ export default async function Home() {
           </ul>
         </CardContent>
       </Card>
+
+      {overview.users || overview.audit ? (
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          {overview.users ? (
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle>
+                  {canReadUsers ? (
+                    <Link href="/users" className="text-accent hover:underline">
+                      {t("users")}
+                    </Link>
+                  ) : (
+                    t("users")
+                  )}
+                </CardTitle>
+                <p className="mt-2 text-3xl font-semibold tabular-nums">{overview.users.total}</p>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <dl>
+                  <dt className="text-xs text-muted">{t("activeSessions")}</dt>
+                  <dd className="mt-1 text-lg font-medium tabular-nums">
+                    {overview.users.activeSessions}
+                  </dd>
+                </dl>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {overview.audit ? (
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle>{t("recentAudit")}</CardTitle>
+                  {canReadAudit ? (
+                    <Link href="/audit" className="text-xs font-medium text-accent hover:underline">
+                      {t("viewAudit")}
+                    </Link>
+                  ) : null}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {overview.audit.entries.length > 0 ? (
+                  <ul>
+                    {overview.audit.entries.map((entry) => {
+                      const target = [entry.targetType, entry.targetId]
+                        .filter((value): value is string => Boolean(value))
+                        .join(" / ");
+                      const details = [entry.actor, target].filter((value): value is string =>
+                        Boolean(value),
+                      );
+                      return (
+                        <li
+                          key={entry.id}
+                          className="flex flex-col gap-1 border-b px-6 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-mono text-xs" dir="ltr">
+                              {entry.action}
+                            </p>
+                            {details.length > 0 ? (
+                              <p className="mt-1 truncate text-[11px] text-muted" dir="ltr">
+                                {details.join(" · ")}
+                              </p>
+                            ) : null}
+                          </div>
+                          <time
+                            dateTime={entry.createdAt.toISOString()}
+                            className="shrink-0 text-[11px] text-muted"
+                          >
+                            {dateFormat.format(entry.createdAt)}
+                          </time>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="px-6 py-10 text-center text-sm text-muted">{t("noAudit")}</p>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
 
       <Card className="mt-8">
         <CardHeader className="border-b">
