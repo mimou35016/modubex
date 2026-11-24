@@ -11,11 +11,11 @@ Short record of decisions a builder needs before M1. Setup commands are in the r
 
 ## Decisions worth keeping
 
-- **Locale is a cookie, not a route prefix (for now).** `NEXT_LOCALE` is read in `src/i18n/request.ts` and the root layout, which sets `lang` and `dir`. A cookie switch is a server action plus `router.refresh()`, so no locale-prefixed routes exist yet. Revisit when M6 adds URL-based locale routing.
+- **Locale is a cookie, not a route prefix.** `NEXT_LOCALE` is read in `src/i18n/request.ts` and the root layout, which sets `lang` and `dir`. A cookie switch is a server action plus `router.refresh()`. M6 did not add URL-based locale routing; core and module messages now fall back to English per key when a translation is missing.
 - **CI typechecks before it builds.** Next 16 generates `LayoutProps` only after `next dev`/`build`, so layouts use explicit props. Do not switch back to generated types without changing the gate order.
-- **Theme uses `next-themes` with `class` on `<html>`**, plus `suppressHydrationWarning`. The toggle uses `useSyncExternalStore` for the mounted check so it does not flash or trip the `set-state-in-effect` lint rule.
+- **Theme uses `next-themes` with `class` on `<html>`**, plus `suppressHydrationWarning`. M6 adds `themeInitScript` (injected in `<head>` by the root layout) to read the stored/system theme and set the `dark` class and `colorScheme` before first paint, so there is no light-mode flash; `next-themes` reconciles after hydration. The toggle uses `useSyncExternalStore` for the mounted check so it does not trip the `set-state-in-effect` lint rule.
 - **Logs are structured JSON** from `src/core/logging/logger.ts`. Use `logger` instead of raw `console.*` in server code.
-- **No fake UI.** Sidebar entries for future modules are non-interactive labels with their milestone number; there are no dead links or handlers without persisted effects.
+- **No fake UI.** Module entries in the desktop sidebar and mobile nav are real links generated only for enabled modules whose route permission the caller holds. `npm run ui:check` now enforces this automatically across TSX in `src/app` and `src/modules`; reasoned `// zero-fake-ui-allow:` exemptions are the only escape hatch.
 
 ## M1 additions
 
@@ -42,4 +42,4 @@ See [`identity.md`](identity.md) for the M1 configuration reference and flows, a
 
 ## Verification
 
-Run `npm run typecheck`, `npm run lint`, `npm run test`, `npm run i18n:check`, `npm run build`. The overview page was also checked in the browser at desktop and mobile widths, in light/dark themes and in `en`/`fr`/`ar` (RTL), with no console errors.
+Run `npm run typecheck`, `npm run lint`, `npm run ui:check`, `npm run test`, `npm run i18n:check`, `npm run modules:check`, `npm run build` — that is the M6 CI order. The overview page was also checked in the browser at desktop and mobile widths, in light/dark themes and in `en`/`fr`/`ar` (RTL), with no console errors.

@@ -5,3 +5,7 @@ coverage
 package-lock.json
 next-env.d.ts
 *.tsbuildinfo
+# Runtime data (including uploaded assets) and tool-managed docs are not formatted.
+.data
+.agents
+.opencode

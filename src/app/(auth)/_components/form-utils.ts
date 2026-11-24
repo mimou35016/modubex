@@ -31,17 +31,15 @@ export function needsTwoFactor(result: unknown): boolean {
 }
 
 export type AuthErrorCode =
-  | "invalidCredentials"
-  | "generic"
-  | "weakPassword"
-  | "emailTaken"
-  | "rateLimited";
+  "invalidCredentials" | "generic" | "weakPassword" | "emailTaken" | "rateLimited";
 
 export function authErrorCode(message?: string | null): AuthErrorCode {
   const value = (message ?? "").toLowerCase();
   if (!value) return "generic";
-  if (/rate.?limit|too many (attempts|requests)|try again later|429/.test(value)) return "rateLimited";
-  if (/already (exists|registered|in use)|duplicate|taken|email.*exist/.test(value)) return "emailTaken";
+  if (/rate.?limit|too many (attempts|requests)|try again later|429/.test(value))
+    return "rateLimited";
+  if (/already (exists|registered|in use)|duplicate|taken|email.*exist/.test(value))
+    return "emailTaken";
   if (/weak|too short|too long|minimum|maximum|at least|password.*(require|must)/.test(value)) {
     return "weakPassword";
   }
@@ -62,7 +60,8 @@ export function readActionState(state: unknown): ActionInfo {
   if (!record) return { status: "idle" };
 
   const explicit = firstString(record, ["status", "state"]);
-  const success = explicit === "success" || explicit === "ok" || record.success === true || record.ok === true;
+  const success =
+    explicit === "success" || explicit === "ok" || record.success === true || record.ok === true;
   const failure = explicit === "error" || explicit === "failed" || record.error != null;
   const status = success ? "success" : failure ? "error" : "idle";
 
@@ -72,10 +71,25 @@ export function readActionState(state: unknown): ActionInfo {
   return {
     status,
     message:
-      firstString(record, ["message", "error", "detail"]) ?? firstString(data, ["message", "error"]),
+      firstString(record, ["message", "error", "detail"]) ??
+      firstString(data, ["message", "error"]),
     acceptUrl:
-      firstString(record, ["acceptUrl", "acceptURL", "invitationUrl", "invitationURL", "url", "link"]) ??
-      firstString(data, ["acceptUrl", "acceptURL", "invitationUrl", "invitationURL", "url", "link"]) ??
+      firstString(record, [
+        "acceptUrl",
+        "acceptURL",
+        "invitationUrl",
+        "invitationURL",
+        "url",
+        "link",
+      ]) ??
+      firstString(data, [
+        "acceptUrl",
+        "acceptURL",
+        "invitationUrl",
+        "invitationURL",
+        "url",
+        "link",
+      ]) ??
       firstString(invitation, ["acceptUrl", "acceptURL", "url", "link"]),
   };
 }
@@ -104,14 +118,7 @@ export function readTotpEnrollment(result: unknown): TotpEnrollment | null {
   return { totpURI, backupCodes };
 }
 
-const ruleIds = new Set([
-  "minLength",
-  "maxLength",
-  "number",
-  "symbol",
-  "lowercase",
-  "uppercase",
-]);
+const ruleIds = new Set(["minLength", "maxLength", "number", "symbol", "lowercase", "uppercase"]);
 
 function normalizeRuleId(value: string): string | undefined {
   const normalized = value.trim().toLowerCase();
@@ -131,7 +138,8 @@ export function passwordRuleHints(rules: unknown, t: Translator): string[] {
     for (const rule of rules) {
       if (rule && typeof rule === "object") {
         const record = rule as UnknownRecord;
-        if (record.enabled === false || record.active === false || record.required === false) continue;
+        if (record.enabled === false || record.active === false || record.required === false)
+          continue;
       }
       const key =
         typeof rule === "string"

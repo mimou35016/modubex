@@ -2,17 +2,21 @@ import { getTranslations } from "next-intl/server";
 import {
   BadgeCheck,
   Blocks,
+  CircleHelp,
   LayoutDashboard,
   MailPlus,
+  Pencil,
   ScrollText,
   Settings,
   Shield,
   UserRound,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "@/app/(app)/_components/nav-link";
 import { hasPermission, type PermissionKeys } from "@/app/(app)/_components/permissions";
 import { SiteLogo } from "@/components/brand/site-logo";
+import { getModuleNavLinks } from "@/core/modules/nav";
 
 type Props = {
   version: string;
@@ -28,6 +32,15 @@ const activeClass = "bg-accent-soft text-accent";
 const subLinkClass =
   "flex items-center gap-2 rounded-md ps-9 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-accent-soft hover:text-foreground";
 
+const moduleNavIcons: Readonly<Record<string, LucideIcon>> = {
+  CircleHelp,
+  Pencil,
+};
+
+function moduleNavIcon(icon: string): LucideIcon {
+  return moduleNavIcons[icon] ?? Blocks;
+}
+
 export async function Sidebar({
   version,
   currentMilestone,
@@ -37,6 +50,8 @@ export async function Sidebar({
 }: Props) {
   const t = await getTranslations("nav");
   const tModules = await getTranslations("modules");
+  const tMessages = await getTranslations();
+  const moduleLinks = await getModuleNavLinks(permissions);
   const canSeeModules = hasPermission(permissions, "modules.read");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
@@ -144,6 +159,28 @@ export async function Sidebar({
                 {t("areas.settings")}
               </NavLink>
             ) : null}
+          </>
+        ) : null}
+
+        {moduleLinks.length > 0 ? (
+          <>
+            <p className="mt-8 px-3 pb-2 font-mono text-[10px] tracking-wide text-muted">
+              {tModules("navLabel")}
+            </p>
+            {moduleLinks.map((link) => {
+              const Icon = moduleNavIcon(link.icon);
+              return (
+                <NavLink
+                  key={`${link.moduleId}:${link.key}`}
+                  href={link.href}
+                  className={linkClass}
+                  activeClassName={activeClass}
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  {tMessages(link.labelKey)}
+                </NavLink>
+              );
+            })}
           </>
         ) : null}
       </nav>

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { changePasswordAction, type ActionState } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { ActionResult } from "../action-result";
 
@@ -21,20 +21,18 @@ export function PasswordForm() {
       <input type="hidden" name="username" autoComplete="username" value="" />
       <div className="space-y-1.5">
         <Label htmlFor="profile-current-password">{tAuth("common.currentPassword")}</Label>
-        <Input
+        <PasswordInput
           id="profile-current-password"
           name="currentPassword"
-          type="password"
           autoComplete="current-password"
           required
         />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="profile-new-password">{tAuth("common.newPassword")}</Label>
-        <Input
+        <PasswordInput
           id="profile-new-password"
           name="newPassword"
-          type="password"
           autoComplete="new-password"
           required
         />

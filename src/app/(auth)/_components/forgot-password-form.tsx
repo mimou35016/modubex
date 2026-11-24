@@ -53,8 +53,16 @@ export function ForgotPasswordForm() {
         <p className="text-sm leading-6 text-muted">{t("forgot.subtitle")}</p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
-      {sent ? <Alert tone="success" className="mt-5">{t("forgot.success")}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
+      {sent ? (
+        <Alert tone="success" className="mt-5">
+          {t("forgot.success")}
+        </Alert>
+      ) : null}
 
       {!sent ? (
         <form onSubmit={onSubmit} className="mt-6 space-y-4">

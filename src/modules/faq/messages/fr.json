@@ -1,0 +1,84 @@
+{
+  "title": "FAQ",
+  "description": "Gérer les questions fréquentes.",
+  "routes": {
+    "questions": {
+      "label": "Questions"
+    },
+    "manage": {
+      "label": "Gérer les questions"
+    }
+  },
+  "sidebar": {
+    "questions": "Questions",
+    "manage": "Gérer les questions"
+  },
+  "questions": {
+    "subtitle": "Les réponses aux questions les plus fréquentes.",
+    "emptyFallback": "Aucune question pour le moment."
+  },
+  "manage": {
+    "subtitle": "Créez, modifiez et publiez les questions affichées dans la FAQ.",
+    "createTitle": "Ajouter une question",
+    "listTitle": "Toutes les questions",
+    "empty": "Aucune question n'a encore été ajoutée.",
+    "published": "Publiée",
+    "draft": "Brouillon",
+    "position": "Position",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "publish": "Publier",
+    "unpublish": "Dépublier",
+    "deleteConfirm": "Je comprends que cette question sera supprimée.",
+    "fields": {
+      "question": "Question",
+      "answer": "Réponse",
+      "position": "Position"
+    },
+    "placeholders": {
+      "question": "Que souhaitez-vous demander ?",
+      "answer": "Rédigez une réponse claire et concise."
+    },
+    "hints": {
+      "position": "Les numéros les plus petits apparaissent en premier."
+    },
+    "buttons": {
+      "create": "Ajouter la question",
+      "save": "Enregistrer les modifications"
+    }
+  },
+  "settings": {
+    "fields": {
+      "perPage": {
+        "label": "Questions par page",
+        "description": "Nombre de questions publiées affichées sur la page FAQ."
+      },
+      "emptyMessage": {
+        "label": "Message d'état vide",
+        "description": "Affiché lorsqu'il n'y a pas encore de questions publiées."
+      }
+    }
+  },
+  "status": {
+    "created": "Question créée.",
+    "updated": "Question mise à jour.",
+    "published": "Question publiée.",
+    "unpublished": "Question dépubliée.",
+    "deleted": "Question supprimée."
+  },
+  "errors": {
+    "denied": "Vous n'avez pas la permission d'effectuer cette action.",
+    "invalidInput": "Vérifiez le formulaire et réessayez.",
+    "questionRequired": "Saisissez une question.",
+    "questionTooLong": "La question doit contenir moins de 300 caractères.",
+    "answerRequired": "Saisissez une réponse.",
+    "answerTooLong": "La réponse doit contenir moins de 5000 caractères.",
+    "positionInvalid": "La position doit être un nombre entier entre 0 et 10000.",
+    "idInvalid": "Référence de question invalide.",
+    "publishedInvalid": "Valeur de publication invalide.",
+    "notFound": "Question introuvable.",
+    "saveFailed": "Impossible d'enregistrer la question.",
+    "publishFailed": "Impossible de modifier l'état de publication.",
+    "deleteFailed": "Impossible de supprimer la question."
+  }
+}

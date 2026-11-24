@@ -50,6 +50,8 @@
       "backToSignIn": "Retour à la connexion",
       "newPassword": "Nouveau mot de passe",
       "currentPassword": "Mot de passe actuel",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
       "code": "Code"
     },
     "signIn": {

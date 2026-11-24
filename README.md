@@ -2,7 +2,7 @@
 
 A lean, modular foundation for web applications and admin dashboards. See [`docs/PRD.md`](docs/PRD.md) for the product spec and [`docs/tasks.md`](docs/tasks.md) for the milestone plan.
 
-Current state: **M0–M4 complete**. RBAC, custom roles, user management, audit viewer/export/purge, runtime settings, the single `getEntitlements()` seam, live password/2FA policies, and the audited license action are present. M4 adds build-time bundled modules, a generated registry, `ModuleInstall` lifecycle state with permission/entitlement/dependency gates, aggregated module permissions and messages, and the `/modules` store. Guides: [`docs/identity.md`](docs/identity.md), [`docs/authorization.md`](docs/authorization.md), [`docs/settings.md`](docs/settings.md), [`docs/licensing.md`](docs/licensing.md), [`docs/modules.md`](docs/modules.md), [`docs/user-guide.md`](docs/user-guide.md), [`docs/developer-guide.md`](docs/developer-guide.md).
+Current state: **M0–M7 complete — v1 delivered**. RBAC, custom roles, user management, audit viewer/export/purge, runtime settings, the single `getEntitlements()` seam, live password/2FA policies, and the audited license action are present. M4 adds build-time bundled modules, a generated registry, `ModuleInstall` lifecycle state with permission/entitlement/dependency gates, aggregated module permissions and messages, and the `/modules` store. M5 adds the mail and storage adapters, permission-aware file serving, live overview data, and `/profile`. M6 adds the complete `faq` example module, module sidebar links, per-key i18n fallback, a pre-paint theme script, and the zero-fake-UI CI gate. M7 adds the Docker Compose reference deployment (app, PostgreSQL 16, Mailpit, one-shot migrations) and container healthchecks. Guides: [`docs/identity.md`](docs/identity.md), [`docs/authorization.md`](docs/authorization.md), [`docs/settings.md`](docs/settings.md), [`docs/licensing.md`](docs/licensing.md), [`docs/modules.md`](docs/modules.md), [`docs/user-guide.md`](docs/user-guide.md), [`docs/developer-guide.md`](docs/developer-guide.md).
 
 ## Requirements
 
@@ -24,7 +24,19 @@ Before starting, set `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL`
 
 Open http://localhost:3000 for the readiness overview, which reports readiness from the actual checkout. Public auth pages live outside the dashboard shell in the `(auth)` route group; session-protected pages live in the `(app)` route group.
 
-## Routes added in M2–M4
+## Docker Compose quickstart (reference)
+
+```bash
+docker compose up --build
+```
+
+- App: http://localhost:3000 — sign in with the seeded Owner credentials below.
+- Mailpit UI: http://localhost:8025 (SMTP listens on port 1025); captured emails appear there.
+- Compose builds the standalone runner, waits for PostgreSQL to be healthy, runs `npm run db:deploy && npm run db:seed` once, then starts the app. Database and upload data live in named volumes, not in the image.
+
+Stop the stack with `docker compose down` — **not** `docker compose down -v` — to preserve those volumes. See [Deployment](#deployment) for data-safety details.
+
+## Routes added in M2–M6
 
 | Route                               | Purpose                                                                                                        | Required permission                                                                                             |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -37,6 +49,14 @@ Open http://localhost:3000 for the readiness overview, which reports readiness f
 | `/modules`                          | App store: bundled modules, real state, required plan, and dependencies                                        | `modules.read` (install/enable/disable/uninstall require `modules.manage` and `modules.store` as applicable)    |
 | `/modules/[moduleId]/settings`      | Generated settings form from the module's zod manifest schema                                                  | `modules.manage` and `modules.store`                                                                            |
 | `/modules/run/[moduleId]/[...slug]` | Generic runner for a bundled, enabled module route component                                                   | `app.access` plus the route's declared `<moduleId>.*` permission                                                |
+| `/profile`                          | Name, avatar, password, 2FA, and active sessions for the current user                                          | `app.access`; file uploads are permission-aware                                                                 |
+| `/invite`                           | Invite a user to the workspace                                                                                 | `users.invite`                                                                                                  |
+| `/two-factor`, `/two-factor/enroll` | TOTP challenge during sign-in and TOTP enrollment                                                              | Session/auth flow; no admin permission                                                                          |
+| `/modules/run/faq`                  | Example FAQ module route inside the generic runner                                                             | `faq.*` route permission while the module is enabled                                                            |
+| `/api/files/[id]`                   | Serve stored file assets by opaque asset id                                                                    | Session and ownership for avatars; public for site logos                                                        |
+| `/api/audit/export`                 | CSV export of audit entries                                                                                    | `audit.export`                                                                                                  |
+| `/api/health`                       | Liveness endpoint used by the Docker healthchecks                                                              | Public                                                                                                          |
+| `/icon`                             | Generated app icon metadata route                                                                              | Public                                                                                                          |
 
 Direct requests are checked on the server; see [`docs/authorization.md`](docs/authorization.md) for the catalog and guards. Settings details are in [`docs/settings.md`](docs/settings.md); license details are in [`docs/licensing.md`](docs/licensing.md); module authoring and lifecycle details are in [`docs/modules.md`](docs/modules.md).
 
@@ -67,7 +87,7 @@ Sign in on the public sign-in page, then change the password in any real deploym
 | `npm run db:deploy`                       | Apply migrations in production                        |
 | `npm run db:seed`                         | Repeatable seed: creates the first Owner if absent    |
 
-CI runs `typecheck → lint → test → i18n:check → build`, in that order, and also runs `npm run modules:check` to fail on a stale module registry. Run the same sequence plus `npm run modules:check` before opening a pull request.
+CI runs `typecheck → lint → ui:check → test → i18n:check → modules:check → build`, in that order. `ui:check` is the zero-fake-UI gate, and `modules:check` fails on a stale module registry. Run the same sequence before opening a pull request.
 
 ## Layout
 
@@ -93,4 +113,10 @@ Copy `.env.example` to `.env.local`; `.env*` files are gitignored. Secrets and i
 
 ## Deployment
 
-Docker and the health check are scheduled for M7. Until then, `npm run build && npm run start` is the only production path.
+The reference deployment is the Docker Compose stack described above: `docker compose up --build` builds a standalone Next.js runner, starts PostgreSQL 16 and Mailpit, applies migrations and the idempotent seed once, and serves the app on port 3000. Container healthchecks call `/api/health` with Node's built-in `fetch`. `BETTER_AUTH_SECRET` can be supplied from the shell or a local `.env` file; the Compose default is a development-only value, as are the database and seeded Owner credentials.
+
+For a proxied deployment, set `NEXT_PUBLIC_APP_URL` to the public origin before `docker compose up --build` (in the shell or local `.env`) and rebuild the image, because Compose passes it as a build arg and Next inlines it at build time.
+
+For a non-container production build, use `npm run build && npm run start`.
+
+**Data safety:** `docker compose down` stops containers and keeps the `db-data` and `uploads` named volumes. `docker compose down -v` deletes both volumes, including the database and every uploaded file; never run it against data you want to keep. The seed credentials above are local defaults only — change the Owner password before any shared deployment.

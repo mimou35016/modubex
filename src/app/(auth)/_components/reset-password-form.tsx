@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { buildPasswordSchema, type PasswordRules } from "@/core/auth/schemas";
 import { authClient } from "@/lib/auth-client";
@@ -94,10 +94,9 @@ export function ResetPasswordForm({ token, rules }: { token?: string; rules: Pas
           <input type="hidden" name="username" autoComplete="username" value="" />
           <div className="space-y-1.5">
             <Label htmlFor="reset-password">{t("common.newPassword")}</Label>
-            <Input
+            <PasswordInput
               id="reset-password"
               name="newPassword"
-              type="password"
               autoComplete="new-password"
               required
               value={newPassword}

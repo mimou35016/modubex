@@ -13,9 +13,8 @@ import { authErrorCode, getAuthError } from "./form-utils";
 
 type BackupVerifier = (input: { code: string }) => Promise<unknown>;
 
-const backupVerifier = (
-  authClient.twoFactor as unknown as { verifyBackupCode?: BackupVerifier }
-).verifyBackupCode;
+const backupVerifier = (authClient.twoFactor as unknown as { verifyBackupCode?: BackupVerifier })
+  .verifyBackupCode;
 
 export function TwoFactorChallengeForm({ required = false }: { required?: boolean }) {
   const t = useTranslations("auth");
@@ -76,7 +75,11 @@ export function TwoFactorChallengeForm({ required = false }: { required?: boolea
         </p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">

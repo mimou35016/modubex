@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { NavLink } from "@/app/(app)/_components/nav-link";
 import { hasPermission, type PermissionKeys } from "@/app/(app)/_components/permissions";
+import { getModuleNavLinks } from "@/core/modules/nav";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
@@ -35,6 +36,8 @@ export async function AppShell({
 }: Props) {
   const t = await getTranslations("nav");
   const tModules = await getTranslations("modules");
+  const tMessages = await getTranslations();
+  const moduleLinks = await getModuleNavLinks(permissions);
   const canSeeModules = hasPermission(permissions, "modules.read");
   const canSeeUsers = hasPermission(permissions, "users.read");
   const canSeeRoles = hasPermission(permissions, "roles.read");
@@ -69,6 +72,16 @@ export async function AppShell({
               {tModules("navLabel")}
             </NavLink>
           ) : null}
+          {moduleLinks.map((link) => (
+            <NavLink
+              key={`${link.moduleId}:${link.key}`}
+              href={link.href}
+              className={mobileLink}
+              activeClassName={mobileActive}
+            >
+              {tMessages(link.labelKey)}
+            </NavLink>
+          ))}
           {canSeeUsers ? (
             <NavLink href="/users" className={mobileLink} activeClassName={mobileActive}>
               {t("areas.users")}

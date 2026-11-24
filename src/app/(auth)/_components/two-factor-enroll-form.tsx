@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { passwordSchema, twoFactorSchema } from "@/core/auth/schemas";
 import { authClient } from "@/lib/auth-client";
@@ -121,19 +122,30 @@ export function TwoFactorEnrollForm() {
         <p className="text-sm leading-6 text-muted">{t("twoFactor.enrollSubtitle")}</p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
-      {enabled ? <Alert tone="success" className="mt-5">{t("twoFactor.success")}</Alert> : null}
-      {disabled ? <Alert tone="success" className="mt-5">{t("twoFactor.disabled")}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
+      {enabled ? (
+        <Alert tone="success" className="mt-5">
+          {t("twoFactor.success")}
+        </Alert>
+      ) : null}
+      {disabled ? (
+        <Alert tone="success" className="mt-5">
+          {t("twoFactor.disabled")}
+        </Alert>
+      ) : null}
 
       {!enrollment ? (
         <form onSubmit={onEnable} className="mt-6 space-y-4">
           <input type="hidden" name="username" autoComplete="username" value="" />
           <div className="space-y-1.5">
             <Label htmlFor="enroll-password">{t("common.currentPassword")}</Label>
-            <Input
+            <PasswordInput
               id="enroll-password"
               name="password"
-              type="password"
               autoComplete="current-password"
               required
               value={password}
@@ -148,7 +160,10 @@ export function TwoFactorEnrollForm() {
         <div className="mt-6 space-y-5">
           <div className="space-y-1.5">
             <Label>{t("twoFactor.secretLabel")}</Label>
-            <p className="rounded-md border bg-background p-3 font-mono text-xs break-all" dir="ltr">
+            <p
+              className="rounded-md border bg-background p-3 font-mono text-xs break-all"
+              dir="ltr"
+            >
               {enrollment.totpURI}
             </p>
           </div>
@@ -194,10 +209,9 @@ export function TwoFactorEnrollForm() {
         <p className="mt-1 text-xs text-muted">{t("twoFactor.disableSubtitle")}</p>
         <form onSubmit={onDisable} className="mt-3 space-y-3">
           <input type="hidden" name="username" autoComplete="username" value="" />
-          <Input
+          <PasswordInput
             aria-label={t("common.currentPassword")}
             name="disablePassword"
-            type="password"
             autoComplete="current-password"
             placeholder={t("common.currentPassword")}
             dir="ltr"
@@ -213,4 +227,3 @@ export function TwoFactorEnrollForm() {
     </>
   );
 }
-

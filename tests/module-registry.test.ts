@@ -60,6 +60,7 @@ expectTypeOfRoute(routeProps);
 
 function expectTypeOfRoute(_props: ModuleRouteProps): void {
   // Compile-time contract check for the frozen route props shape.
+  void _props;
 }
 
 describe("generated module registry", () => {

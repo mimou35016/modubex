@@ -4,7 +4,8 @@
 // in M4 and must use a module prefix.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -285,4 +286,19 @@ model FileAsset {
   @@index([ownerId, purpose])
   @@index([workspaceId, purpose])
   @@map("fileAsset")
+}
+
+/// FAQ module-owned questions. The single-workspace sentinel is "".
+model FaqQuestion {
+  id          String   @id @default(cuid())
+  workspaceId String   @default("")
+  question    String
+  answer      String
+  published   Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId, published, position])
+  @@map("faqQuestion")
 }

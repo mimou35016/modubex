@@ -10,7 +10,11 @@ describe("structured logger", () => {
 
     expect(info).toHaveBeenCalledTimes(1);
     const entry = JSON.parse(String(info.mock.calls[0][0])) as Record<string, unknown>;
-    expect(entry).toMatchObject({ level: "info", message: "Foundation seed complete", milestone: "M0" });
+    expect(entry).toMatchObject({
+      level: "info",
+      message: "Foundation seed complete",
+      milestone: "M0",
+    });
     expect(typeof entry.timestamp).toBe("string");
   });
 });

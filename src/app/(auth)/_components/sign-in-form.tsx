@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { authErrorCode, getAuthError, needsTwoFactor } from "./form-utils";
 
@@ -78,7 +79,11 @@ export function SignInForm({ providers }: { providers: OAuthProvider[] }) {
         <p className="text-sm leading-6 text-muted">{t("signIn.subtitle")}</p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
@@ -96,10 +101,9 @@ export function SignInForm({ providers }: { providers: OAuthProvider[] }) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="sign-in-password">{t("common.password")}</Label>
-          <Input
+          <PasswordInput
             id="sign-in-password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             value={password}

@@ -1,0 +1,84 @@
+{
+  "title": "FAQ",
+  "description": "Manage frequently asked questions.",
+  "routes": {
+    "questions": {
+      "label": "Questions"
+    },
+    "manage": {
+      "label": "Manage questions"
+    }
+  },
+  "sidebar": {
+    "questions": "Questions",
+    "manage": "Manage questions"
+  },
+  "questions": {
+    "subtitle": "Answers to the questions we hear most often.",
+    "emptyFallback": "No questions yet."
+  },
+  "manage": {
+    "subtitle": "Create, edit, and publish the questions shown in the FAQ.",
+    "createTitle": "Add a question",
+    "listTitle": "All questions",
+    "empty": "No questions have been added yet.",
+    "published": "Published",
+    "draft": "Draft",
+    "position": "Position",
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "deleteConfirm": "I understand this question will be deleted.",
+    "fields": {
+      "question": "Question",
+      "answer": "Answer",
+      "position": "Position"
+    },
+    "placeholders": {
+      "question": "What would you like to ask?",
+      "answer": "Write a clear, concise answer."
+    },
+    "hints": {
+      "position": "Lower numbers appear first."
+    },
+    "buttons": {
+      "create": "Add question",
+      "save": "Save changes"
+    }
+  },
+  "settings": {
+    "fields": {
+      "perPage": {
+        "label": "Questions per page",
+        "description": "How many published questions to show on the FAQ page."
+      },
+      "emptyMessage": {
+        "label": "Empty state message",
+        "description": "Shown when there are no published questions yet."
+      }
+    }
+  },
+  "status": {
+    "created": "Question created.",
+    "updated": "Question updated.",
+    "published": "Question published.",
+    "unpublished": "Question unpublished.",
+    "deleted": "Question deleted."
+  },
+  "errors": {
+    "denied": "You do not have permission to perform this action.",
+    "invalidInput": "Check the form and try again.",
+    "questionRequired": "Enter a question.",
+    "questionTooLong": "Keep the question under 300 characters.",
+    "answerRequired": "Enter an answer.",
+    "answerTooLong": "Keep the answer under 5000 characters.",
+    "positionInvalid": "Position must be a whole number between 0 and 10000.",
+    "idInvalid": "Invalid question reference.",
+    "publishedInvalid": "Invalid publication value.",
+    "notFound": "Question not found.",
+    "saveFailed": "Unable to save the question.",
+    "publishFailed": "Unable to update publication status.",
+    "deleteFailed": "Unable to delete the question."
+  }
+}

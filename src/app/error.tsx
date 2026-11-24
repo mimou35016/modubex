@@ -2,7 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 
-export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function Error({
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <div className="mx-auto max-w-xl border-l-2 border-accent ps-5">
       <h1 className="text-2xl font-semibold tracking-tight">Something broke.</h1>

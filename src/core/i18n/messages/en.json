@@ -50,6 +50,8 @@
       "backToSignIn": "Back to sign in",
       "newPassword": "New password",
       "currentPassword": "Current password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "code": "Code"
     },
     "signIn": {

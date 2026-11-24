@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { updateLicenseAction } from "@/app/actions/license";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { ActionResult } from "../action-result";
 
@@ -48,10 +49,9 @@ export function LicenseForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="license-key">{t("licenseKeyLabel")}</Label>
-        <Input
+        <PasswordInput
           id="license-key"
           name="licenseKey"
-          type="password"
           autoComplete="off"
           dir="ltr"
           maxLength={120}

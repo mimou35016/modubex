@@ -37,10 +37,7 @@ function compare(sourceFile: string, targetFile: string, label: string, fail: bo
     return 0;
   }
 
-  const missing = missingKeys(
-    flatten(readMessages(sourceFile)),
-    flatten(readMessages(targetFile)),
-  );
+  const missing = missingKeys(flatten(readMessages(sourceFile)), flatten(readMessages(targetFile)));
 
   if (missing.length === 0) return 0;
 
@@ -62,12 +59,7 @@ if (!existsSync(sourceFile)) {
 }
 
 for (const locale of comparisonLocales) {
-  errors += compare(
-    sourceFile,
-    path.join(coreDir, `${locale}.json`),
-    `core/${locale}`,
-    true,
-  );
+  errors += compare(sourceFile, path.join(coreDir, `${locale}.json`), `core/${locale}`, true);
 }
 
 const modulesDir = path.join(root, "src", "modules");

@@ -81,17 +81,28 @@ const manifest: ModuleManifest = {
 export default moduleManifestSchema.parse(manifest);
 ```
 
+## Working example: faq
+
+The bundled `faq` module is the reference implementation. Read it alongside this contract:
+
+- `src/modules/faq/manifest.ts` — `requiredPlan: "pro"`, no dependencies, `faq.read` / `faq.manage`, and two routes (`questions` at the module root, `manage` at `/manage`) with sidebar labels and icons. It imports `moduleManifestSchema` from `@/core/modules/manifest` directly: the `@/core/modules` barrel loads the generated registry, which imports the manifest, so going through the barrel would create a cycle.
+- `src/modules/faq/settings.ts` — `perPage` (integer 1–50, default 10) and `emptyMessage` (1–120 characters, default `No questions yet.`), rendered by the generic `/modules/faq/settings` page.
+- `src/modules/faq/routes/questions.tsx` and `routes/manage.tsx` — the published, setting-bounded read view and the full management list; both resolve labels through `withModuleMessages()`.
+- `src/modules/faq/components/question-forms.tsx` and `actions.ts` — create/edit/publish/delete forms backed by zod-validated server actions, each writing a strict `faq.question.*` audit entry with before/after snapshots. Every mutation calls `requirePermission("faq.manage")` before touching the database.
+- `src/modules/faq/cleanup.ts` — the idempotent delete-data hook scoped to the workspace; `prisma/migrations/20261123040000_faq_add_questions/migration.sql` creates the prefixed `FaqQuestion` table and its lookup index.
+- `src/modules/faq/messages/{en,fr,ar}.json` — the module message trees; `tests/faq-module.test.ts` covers the manifest, settings, route reads, actions, and cleanup.
+
 ## Routes and sidebar conventions
 
 A route descriptor has:
 
-| Property     | Required | Meaning                                                                                                                                  |
-| ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`        | yes      | Lowercase kebab-case key; the generator imports `routes/<key>.tsx` from the module.                                                      |
-| `path`       | yes      | Path relative to `/modules/run/<id>/`; `""` is the module root, nested paths use `/`-separated lowercase segments with no leading slash. |
-| `labelKey`   | yes      | Message key used for the route title.                                                                                                    |
-| `permission` | no       | `<id>.*` key required to render the route; the runner redirects unauthorized callers to `/forbidden`.                                    |
-| `sidebar`    | no       | `{ labelKey, icon, order? }` for the core-rendered sidebar entry; shown only while the module is enabled.                                |
+| Property     | Required | Meaning                                                                                                                                                                               |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`        | yes      | Lowercase kebab-case key; the generator imports `routes/<key>.tsx` from the module.                                                                                                   |
+| `path`       | yes      | Path relative to `/modules/run/<id>/`; `""` is the module root, nested paths use `/`-separated lowercase segments with no leading slash.                                              |
+| `labelKey`   | yes      | Message key used for the route title.                                                                                                                                                 |
+| `permission` | no       | `<id>.*` key required to render the route; the runner redirects unauthorized callers to `/forbidden`.                                                                                 |
+| `sidebar`    | no       | `{ labelKey, icon, order? }` for a nav entry rendered in the desktop sidebar and mobile nav; shown only while the module is enabled and the route's `permission` (if any) is granted. |
 
 The component file default-exports a React component with `{ moduleId, slug }` props:
 
@@ -106,6 +117,8 @@ export default function QuestionsRoute({ moduleId, slug }: ModuleRouteProps) {
 ```
 
 All module pages are mounted by the generic runner at `/modules/run/[moduleId]/[...slug]` (and `/modules/run/[moduleId]` for a route with `path: ""`). The runner resolves the component from the generated registry, requires `app.access`, checks that the module is `enabled`, matches the declared path, and applies the route permission before rendering. It never imports code from disk at request time.
+
+`getModuleNavLinks(permissions)` in `src/core/modules/nav.ts` turns manifest `sidebar` descriptors into links. The app shell uses the same list for the desktop `Sidebar` and the mobile navigation bar: a link appears only when its module is `enabled` and the caller holds the route's declared `permission` (routes without a permission need only `app.access`, which the shell requires). Entries are de-duplicated by route key and href, sorted by `order`, then module id and route key, and resolved through the merged module messages. Hiding a link is not enforcement — the runner still checks module state and permission for direct requests.
 
 - Declare routes in the manifest; do not hand-write files under `src/app/(app)/modules/run/`.
 - Call `requirePermission("<id>.…")` in route mutations as well; hiding a link is not enforcement.
@@ -140,9 +153,9 @@ Module data lives in the shared Prisma schema (`prisma/schema.prisma`) with vers
 
 ## Messages
 
-Ship `messages/en.json` at minimum; `fr.json` and `ar.json` are recommended. The generator imports each locale file it finds; a missing locale falls back to English at runtime. `npm run i18n:check` fails CI for missing **core** keys in `fr`/`ar`, but missing module keys are warning-only.
+Ship `messages/en.json` at minimum; `fr.json` and `ar.json` are recommended. The generator imports each locale file it finds. `withEnglishFallback()` fills missing translations **per key** from the module's English tree: locale strings win where present, plain objects merge recursively, and arrays or other non-object values are replaced wholesale. A missing locale file yields the English tree. `npm run i18n:check` fails CI for missing **core** keys in `fr`/`ar`, but missing module keys are warning-only.
 
-For enabled modules, `mergeModuleMessages()` deep-merges message trees under `modules.<namespace>` (namespace defaults to the manifest id, or `messageNamespace`). Core keys always win on collision, so keep module keys namespaced. Enabling/disabling changes the merged message set on the next request without a rebuild.
+For enabled modules, `mergeModuleMessages()` deep-merges message trees under `modules.<namespace>` (namespace defaults to the manifest id, or `messageNamespace`). Core keys always win on collision, so keep module keys namespaced. Enabling/disabling changes the merged message set on the next request without a rebuild. Module settings pages and route components can use `withModuleMessages()` to overlay the same per-key fallback on top of the request translator.
 
 ## Cleanup hook
 
@@ -173,14 +186,14 @@ Contract:
 
 `ModuleInstall` stores module id, `state`, `version`, `config` JSON, `dataRetained`, `installedById`, and timestamps. A bundled module with **no row** is reported as `available`; the store derives that state rather than pre-creating rows.
 
-| From                           | Action                  | To        | Notes                                                                                      |
-| ------------------------------ | ----------------------- | --------- | ------------------------------------------------------------------------------------------ |
-| available                      | install                 | installed | Creates/upserts the row, records version and installer, upserts permissions, writes audit. |
-| installed                      | enable                  | enabled   | Routes, sidebar entries, and module messages become live; system-role defaults are synced. |
-| enabled                        | disable                 | disabled  | Routes/sidebar removed immediately; config and data stay.                                  |
-| disabled                       | enable                  | enabled   | Reuses the stored config; no reinstall needed.                                             |
-| installed / enabled / disabled | uninstall (keep-data)   | available | Row retained with `dataRetained: true` and config intact; module-owned data tables stay.   |
-| installed / enabled / disabled | uninstall (delete-data) | available | Hook deletes data, permission rows and config are removed, and the module row is deleted.  |
+| From                           | Action                  | To        | Notes                                                                                                 |
+| ------------------------------ | ----------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
+| available                      | install                 | installed | Creates/upserts the row, records version and installer, upserts permissions, writes audit.            |
+| installed                      | enable                  | enabled   | Routes, desktop/mobile nav entries, and module messages become live; system-role defaults are synced. |
+| enabled                        | disable                 | disabled  | Routes/nav entries removed immediately; config and data stay.                                         |
+| disabled                       | enable                  | enabled   | Reuses the stored config; no reinstall needed.                                                        |
+| installed / enabled / disabled | uninstall (keep-data)   | available | Row retained with `dataRetained: true` and config intact; module-owned data tables stay.              |
+| installed / enabled / disabled | uninstall (delete-data) | available | Hook deletes data, permission rows and config are removed, and the module row is deleted.             |
 
 Other transitions are rejected. Reinstalling a keep-data module restores the prior configuration and data; uninstalling after delete-data starts clean.
 

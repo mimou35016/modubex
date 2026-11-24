@@ -85,7 +85,7 @@ const definitionsById: ReadonlyMap<string, ModuleDefinition> = new Map(
 );
 
 const manifestsById: ReadonlyMap<string, ModuleManifest> = new Map(
-  manifests.map((manifest) => [manifest.id, manifest]),
+  moduleDefinitions.map((definition) => [definition.manifest.id, definition.manifest]),
 );
 
 /** Returns the bundled definition for `id`, or undefined when unknown. */

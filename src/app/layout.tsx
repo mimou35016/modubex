@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { defaultLocale, getLocaleConfig, isLocale, type Locale } from "@/core/i18n/locales";
 import { getDefaultLocale, getSettingValue } from "@/core/settings/service";
+import { themeInitScript } from "@/core/theme/script";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -74,6 +75,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers locale={locale} messages={messages}>
           {children}

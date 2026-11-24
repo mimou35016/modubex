@@ -1,45 +1,47 @@
 # Identity & sessions (M1)
 
-This milestone establishes identity with **Better Auth 1.7.27 (pinned)**. The server is built with `betterAuth` from `better-auth/minimal` plus the Prisma adapter, with plugins `twoFactor` (TOTP), `admin`, and `nextCookies` (registered last). Better Auth owns identity and sessions; licensing remains ours. Public identity pages live in the `(auth)` route group; session-protected pages live in `(app)` and are gated by `requireSession()`.
+This milestone establishes identity with **Better Auth 1.7.27 (pinned)**. The server is built with `betterAuth` from `better-auth/minimal` plus the Prisma adapter, with plugins `twoFactor` (TOTP), `admin`, and `nextCookies` (registered last). Better Auth owns identity and sessions; licensing remains ours. Public identity pages live in the `(auth)` route group; session-protected pages live in `(app)` and are gated by `requireSession()`, which also enforces the runtime `security.requireTwoFactor` setting.
 
 **M2 update:** `User.role` is no longer authoritative. RBAC now owns authorization through `Role` / `Permission` / `RolePermission` / `UserRole` plus the guards in `src/core/auth/dal.ts`; the seeded Owner is assigned through `UserRole`. See [`authorization.md`](authorization.md).
 
 ## Configuration
 
-`DATABASE_URL` (already in `.env.example`) is required. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before starting the app. All values are environment-only, read from `.env`/`.env.local`, which are gitignored; never commit real secrets.
+`DATABASE_URL` (already in `.env.example`) is required. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before starting the app. All values are environment-only, read from `.env`/`.env.local`, which are gitignored; never commit real secrets. Several auth values are **first-seed defaults** for validated runtime `Setting` rows rather than live controls — see the note below.
 
 | Variable                          | Required | Default               | Purpose                                                                               |
 | --------------------------------- | -------- | --------------------- | ------------------------------------------------------------------------------------- |
 | `BETTER_AUTH_SECRET`              | Yes      | —                     | Secret used to sign/encrypt cookies and tokens. Use a long random value.              |
 | `BETTER_AUTH_URL`                 | Yes      | —                     | Canonical app URL used for auth callbacks (e.g. `http://localhost:3000`).             |
-| `AUTH_PASSWORD_MIN_LENGTH`        | No       | `12`                  | Minimum password length.                                                              |
-| `AUTH_PASSWORD_MAX_LENGTH`        | No       | `128`                 | Maximum password length.                                                              |
-| `AUTH_PASSWORD_REQUIRE_NUMBER`    | No       | `true`                | Require at least one digit.                                                           |
-| `AUTH_PASSWORD_REQUIRE_SYMBOL`    | No       | `false`               | Require at least one symbol.                                                          |
-| `AUTH_REQUIRE_EMAIL_VERIFICATION` | No       | `false`               | Require email verification before a usable session.                                   |
-| `AUTH_2FA_REQUIRED`               | No       | `false`               | Force TOTP enrollment for users without it.                                           |
-| `AUTH_GITHUB_CLIENT_ID`           | No       | —                     | GitHub OAuth client ID; the provider is enabled only when both ID and secret are set. |
-| `AUTH_GITHUB_CLIENT_SECRET`       | No       | —                     | GitHub OAuth client secret.                                                           |
-| `AUTH_GOOGLE_CLIENT_ID`           | No       | —                     | Google OAuth client ID; the provider is enabled only when both ID and secret are set. |
-| `AUTH_GOOGLE_CLIENT_SECRET`       | No       | —                     | Google OAuth client secret.                                                           |
+| `AUTH_PASSWORD_MIN_LENGTH`        | No       | `12`                  | Bootstrap default for runtime `security.passwordMinLength` (clamped to 8–128).        |
+| `AUTH_PASSWORD_MAX_LENGTH`        | No       | `128`                 | Bootstrap default for runtime `security.passwordMaxLength` (clamped to 8–256).        |
+| `AUTH_PASSWORD_REQUIRE_NUMBER`    | No       | `true`                | Bootstrap default for runtime `security.requireNumber`.                               |
+| `AUTH_PASSWORD_REQUIRE_SYMBOL`    | No       | `false`               | Bootstrap default for runtime `security.requireSymbol`.                               |
+| `AUTH_REQUIRE_EMAIL_VERIFICATION` | No       | `false`               | Env-only live Better Auth policy: require verification before a usable session.       |
+| `AUTH_2FA_REQUIRED`               | No       | `false`               | Bootstrap default for runtime `security.requireTwoFactor` (TOTP enrollment policy).   |
+| `GITHUB_CLIENT_ID`                | No       | —                     | GitHub OAuth client ID; the provider is enabled only when both ID and secret are set. |
+| `GITHUB_CLIENT_SECRET`            | No       | —                     | GitHub OAuth client secret.                                                           |
+| `GOOGLE_CLIENT_ID`                | No       | —                     | Google OAuth client ID; the provider is enabled only when both ID and secret are set. |
+| `GOOGLE_CLIENT_SECRET`            | No       | —                     | Google OAuth client secret.                                                           |
 | `SEED_OWNER_EMAIL`                | No       | `owner@modubex.local` | Email of the first Owner created by the seed.                                         |
 | `SEED_OWNER_PASSWORD`             | No       | `Owner!Local2026#`    | Password of the first Owner created by the seed.                                      |
 
-Boolean variables accept `true`/`false` strings. No OAuth button is rendered for a provider that is not fully configured, so there are no dead buttons.
+Boolean variables accept `true`/`false` strings. No OAuth button is rendered for a provider that is not fully configured, so there are no dead buttons. Use the unprefixed `GITHUB_*` / `GOOGLE_*` names exactly as shown; the app reads those variables from `src/core/config/env.ts`, not prefixed OAuth variables.
+
+The `AUTH_PASSWORD_*` and `AUTH_2FA_REQUIRED` values above are **bootstrap defaults only**. On the first seed, `ensureDefaultSettings()` creates the corresponding validated `Setting` rows (`security.passwordMinLength`, `security.passwordMaxLength`, `security.requireNumber`, `security.requireSymbol`, `security.requireTwoFactor`); after that the database value wins and is edited in the UI under **Settings → Security**. Numeric defaults are clamped into the registry bounds. `AUDIT_RETENTION_DAYS` follows the same pattern for `audit.retentionDays` under **Settings → Audit**, although it is not an identity policy. Re-running `npm run db:seed` never overwrites edited settings. By contrast, `AUTH_REQUIRE_EMAIL_VERIFICATION` has **no** `Setting` row or UI toggle: Better Auth reads it from the environment at runtime. See [`settings.md`](settings.md#storage-and-registry).
 
 ## Sign-up and sign-in
 
-- **Sign-up** (public `(auth)` page) accepts email + password. Passwords are validated against the four `AUTH_PASSWORD_*` rules above on the server. The account is created through Better Auth; by default a session is issued immediately. With `AUTH_REQUIRE_EMAIL_VERIFICATION=true` the account must be verified first (see below).
+- **Sign-up** (public `(auth)` page) accepts email + password. Passwords are validated on the server through `getPasswordRules()` against the live `security.password*` settings (first seeded from the four `AUTH_PASSWORD_*` defaults above, then edited under **Settings → Security**). The account is created through Better Auth; by default a session is issued immediately. When the env-only `AUTH_REQUIRE_EMAIL_VERIFICATION` policy is `true`, the account must be verified first (see below).
 - **Sign-in** (public `(auth)` page) accepts email + password, or a configured OAuth provider. Better Auth verifies credentials and issues a session cookie; `nextCookies` is the last plugin so cookies are set correctly from server actions.
 - Better Auth `hooks.after` records **successful sign-in** (`auth.sign_in.success`) and **failed sign-in** (`auth.sign_in.failed`) events through `audit.log()`.
 - If TOTP is enabled for the account, sign-in pauses at the 2FA challenge before a session is established.
-- With `AUTH_2FA_REQUIRED=true`, `requireSession()` sends any signed-in user without TOTP to `/two-factor/enroll` before allowing access to `(app)` pages.
+- When the runtime `security.requireTwoFactor` setting is on (seeded from `AUTH_2FA_REQUIRED` on first seed), `requireSession()` sends any signed-in user without TOTP to `/two-factor/enroll` before allowing access to `(app)` pages; change it under **Settings → Security**.
 
 ## Two-factor authentication (TOTP)
 
 - **Enrollment** at `/two-factor/enroll`: generate a TOTP secret, display the QR code / manual key, and confirm with a current authenticator code before enabling it.
 - **Challenge** during sign-in: when TOTP is enabled, the user must enter a current code from their authenticator app.
-- **Enforcement** is controlled by `AUTH_2FA_REQUIRED`. With the default `false`, 2FA is opt-in; with `true`, enrollment is mandatory via the `requireSession()` redirect described above.
+- **Enforcement** is controlled by the runtime `security.requireTwoFactor` `Setting`, seeded from `AUTH_2FA_REQUIRED` on first seed and then edited under **Settings → Security**. Its seeded default is `false` (opt-in); when the stored value is on, enrollment is mandatory via the `requireSession()` redirect described above.
 
 ## Email verification and password reset (M1 logging → M5 delivery)
 
@@ -74,10 +76,10 @@ Rate limiting is **database-backed**, not in-process, so counters survive restar
 The PRD §10 choices that affect this milestone are implemented as defaults rather than fixed product decisions:
 
 - **OAuth providers chosen:** GitHub and Google, but only when both client ID and secret are present.
-- **2FA default off** (`AUTH_2FA_REQUIRED=false`); it is opt-in until configured otherwise.
-- **Password rules:** minimum 12, maximum 128, number required, symbol not required — all overridable by env.
+- **2FA default off**: `AUTH_2FA_REQUIRED=false` seeds `security.requireTwoFactor=false` on a fresh database; afterwards the `Setting` row is authoritative and can be changed under **Settings → Security**.
+- **Password rules:** env defaults are minimum 12, maximum 128, number required, symbol not required. They seed the four `security.password*` `Setting` rows on first seed (numeric values clamped into registry bounds); edit the stored values under **Settings → Security**.
 
-Confirm these defaults with the product owner. M3 moves security policies into validated runtime settings. **M2 added permission checks**: `requirePermission()` / `requirePagePermission()` sit alongside `requireSession()` on pages, server actions, and API handlers, and the temporary Owner value in Better Auth's `role` field has been replaced by RBAC `UserRole` assignments. M1 gated by session only.
+Confirm these defaults with the product owner. M3 moved password rules, 2FA enforcement, and audit retention into validated runtime settings; the env values above are only their first-seed defaults (email verification remains env-only). **M2 added permission checks**: `requirePermission()` / `requirePagePermission()` sit alongside `requireSession()` on pages, server actions, and API handlers, and the temporary Owner value in Better Auth's `role` field has been replaced by RBAC `UserRole` assignments. M1 gated by session only.
 
 ## Smoke test from a fresh database
 

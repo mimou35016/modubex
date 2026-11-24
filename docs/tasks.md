@@ -84,23 +84,25 @@ Sequenced by dependency. `ACn` = PRD §9 acceptance criterion. Docs in `docs/` u
 
 ## M6 — Example module & quality gates
 
-**Exit:** AC2, AC9, AC12.
+**Exit:** AC2, AC9, AC12. **Status: complete. Next: M7 — Reference deployment & docs.**
 
-- M6.1 Example module manifest: routes, sidebar, permissions, settings schema, plan tier, dependencies.
-- M6.2 Example module Prisma model + migration, `en`/`fr`/`ar` messages, cleanup hook, `audit.log()` entries.
-- M6.3 `i18n:check`: missing core keys in `fr`/`ar` fail CI; missing module keys warn only.
-- M6.4 Runtime fallback to `en`; automatic RTL `dir`; flicker-free theme switching.
-- M6.5 CI enforces i18n check and automated zero-fake-UI check.
-- M6.6 Tests for RBAC guards, last-Owner rule, module lifecycle, entitlements, settings invalidation.
+- [x] M6.1 Example module manifest: routes, sidebar, permissions, settings schema, plan tier, dependencies.
+- [x] M6.2 Example module Prisma model + migration, `en`/`fr`/`ar` messages, cleanup hook, `audit.log()` entries.
+- [x] M6.3 `i18n:check`: missing core keys in `fr`/`ar` fail CI; missing module keys warn only.
+- [x] M6.4 Runtime fallback to `en`; automatic RTL `dir`; flicker-free theme switching.
+- [x] M6.5 CI enforces i18n check and automated zero-fake-UI check.
+- [x] M6.6 Tests for RBAC guards, last-Owner rule, module lifecycle, entitlements, settings invalidation.
 
 ## M7 — Reference deployment & docs
 
-**Exit:** AC13, AC14; all 14 acceptance criteria green.
+**Exit:** AC13, AC14; all 14 acceptance criteria green. **Status: complete. Next: none — v1 delivered.** AC13 (Docker reference setup + health check) and AC14 (user/developer guides cover every v1 feature) are green.
 
-- M7.1 Dockerfile + docker-compose (app, PostgreSQL, Mailpit) reference setup.
-- M7.2 Health check endpoint; serverless pass — no local disk, in-process state, or unpooled connections in core.
-- M7.3 `docs/user-guide`: sign-in, roles, store, settings, license, audit.
-- M7.4 `docs/developer-guide`: architecture, module authoring, manifest reference, adapters, i18n, deployment, testing.
-- M7.5 Final acceptance run against all 14 criteria; close gaps.
+- [x] M7.1 Dockerfile + docker-compose (app, PostgreSQL, Mailpit) reference setup.
+- [x] M7.2 Health check endpoint; generated foundation readiness snapshot (no runtime filesystem reads); serverless pass — no local disk, in-process state, or unpooled connections in core.
+- [x] M7.3 `docs/user-guide`: sign-in, roles, store, settings, license, audit.
+- [x] M7.4 `docs/developer-guide`: architecture, module authoring, manifest reference, adapters, i18n, deployment, testing.
+- [x] M7.5 Final acceptance run against all 14 criteria; close gaps.
+
+**Late M7 details folded in:** `npm run readiness:generate` / `npm run readiness:check` maintain the committed readiness snapshot, with freshness asserted by `tests/readiness.test.ts` in the existing `npm run test` CI step (CI order unchanged). `NEXT_PUBLIC_APP_URL` is inlined at Next build time, so the Docker reference image uses its `http://localhost:3000` default and a proxied public origin requires a build-time value and image rebuild.
 
 **Open inputs to resolve during M0–M1 (PRD §10):** OAuth providers, Admin role's default permissions, Better Auth plugins, numeric metric targets.

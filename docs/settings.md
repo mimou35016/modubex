@@ -49,7 +49,7 @@ Password, 2FA, and audit-retention defaults come from env values at bootstrap; n
 ## What the settings actually change
 
 - `site.name` and `site.tagline` appear in the dashboard shell; `site.name`, `seo.description`, and `seo.titleSuffix` drive generated metadata.
-- `localization.defaultLocale` supplies the locale in `src/i18n/request.ts` and the root layout when `NEXT_LOCALE` is missing or invalid; registered locales still determine LTR/RTL.
+- `localization.defaultLocale` supplies the locale in `src/i18n/request.ts` and the root layout when `NEXT_LOCALE` is missing or invalid; registered locales still determine LTR/RTL. Core and enabled-module messages use per-key English fallback when a translation is missing; `npm run i18n:check` enforces core parity in `fr`/`ar` and only warns for module keys.
 - Password rules are resolved live by Better Auth hooks through `getPasswordRules()`, and `requireSession()` redirects users without 2FA to enrollment when `security.requireTwoFactor` is on. Sign-up and reset forms use the same rules.
 - `audit.retentionDays` is read by `/audit` for its retention badge and by the explicit purge action; `0` means nothing is eligible for deletion and the purge writes its own `audit.purged` entry.
 - `workspace.timeZone` is shown resolved on its settings page. Infrastructure values remain env-only and read-only, and entries that need a restart are labeled as such.

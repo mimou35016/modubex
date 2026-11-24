@@ -1,0 +1,89 @@
+# Local reference stack. Credentials and secrets here are development-only;
+# override them for any shared or production deployment.
+name: modubex
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: modubex
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d modubex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  # One-shot: the build stage still has Prisma CLI and tsx available.
+  migrate:
+    build:
+      context: .
+      target: build
+    command: ["sh", "-c", "npm run db:deploy && npm run db:seed"]
+    restart: "no"
+    environment:
+      DATABASE_URL: "postgresql://postgres:root@db:5432/modubex?schema=public"
+      SEED_OWNER_EMAIL: "owner@modubex.local"
+      SEED_OWNER_PASSWORD: "Owner!Local2026#"
+      AUDIT_RETENTION_DAYS: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: runner
+      # NEXT_PUBLIC_APP_URL is inlined into the client bundle during next build.
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:root@db:5432/modubex?schema=public"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      # Kept for server-side env parsing; the client bundle uses build.args.
+      NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-dev-only-secret-change-me-before-production}"
+      MAIL_DRIVER: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_PATH: /app/.data/uploads
+      SEED_OWNER_EMAIL: "owner@modubex.local"
+      SEED_OWNER_PASSWORD: "Owner!Local2026#"
+    volumes:
+      - uploads:/app/.data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/health').then((r) => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  db-data:
+  uploads:

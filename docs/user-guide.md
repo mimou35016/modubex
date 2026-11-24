@@ -1,8 +1,17 @@
 # User guide
 
-This guide covers the day-to-day admin flows available through M5: users, roles, invitations, the module store, settings, the audit log, licensing, your profile, image uploads, and mail delivery. Sign-in, two-factor authentication, password reset, and invitation acceptance are described in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), runtime settings are detailed in [`settings.md`](settings.md), and module authoring is in [`modules.md`](modules.md).
+This guide covers the day-to-day flows in the delivered v1 app: signing in and account security, users, roles, invitations, the module store, the bundled FAQ module, settings, the audit log, licensing, your profile, image uploads, language/theme, mail delivery, and the dashboard overview. Full authentication configuration (env variables, providers, and policies) is in [`identity.md`](identity.md); plan mappings and server guards are in [`licensing.md`](licensing.md), runtime settings are detailed in [`settings.md`](settings.md), module authoring (including the FAQ reference implementation) is in [`modules.md`](modules.md), and deployment/health checks are in [`developer-guide.md`](developer-guide.md#deployment).
 
 Every page is permission-gated. **UI actions are permission-aware**: controls you are not allowed to use are hidden or disabled, but the server checks the permission again for every action and direct request. Hiding a control never grants or removes access by itself.
+
+## Signing in and account security
+
+- **Email and password sign-in** — open the public sign-in page and enter your email and password. Better Auth verifies the credentials and issues the session cookie; successful and failed sign-ins are written to the audit log. Sign-up accepts email and password with the same rules.
+- **First Owner (bootstrap)** — a fresh database is prepared with `npm run db:seed`, which creates one Owner using `SEED_OWNER_EMAIL` / `SEED_OWNER_PASSWORD` (defaults `owner@modubex.local` / `Owner!Local2026#` in `.env.example`). Sign in with that account and change its password on `/profile` before doing real work. Re-running the seed does not create a second Owner or overwrite changes. Bootstrap steps are in [`identity.md`](identity.md#smoke-test-from-a-fresh-database).
+- **OAuth (GitHub / Google)** — a provider button appears only when both its client id and client secret are set in the environment; if they are unset there is no dead button, so use email/password instead. Exact variable names and callback setup are in [`identity.md`](identity.md#configuration).
+- **Two-factor authentication (TOTP)** — enroll at `/two-factor/enroll` (also linked from `/profile`): scan the QR code or enter the key in an authenticator app, then confirm a current code. Once enabled, sign-in pauses at the 2FA challenge before a session is established; `/two-factor` completes a pending challenge. The runtime setting `security.requireTwoFactor` under **Settings → Security** can make enrollment mandatory: when it is on, `requireSession()` sends users without TOTP to enrollment. `AUTH_2FA_REQUIRED` is only the initial default for that setting.
+- **Password reset and email verification** — `/forgot-password` requests a reset link and `/reset-password` completes the change; `/verify-email` completes verification when it is required. Messages are delivered by the mail adapter and are best-effort (see [Mail delivery](#mail-delivery)). Email verification is an environment policy (`AUTH_REQUIRE_EMAIL_VERIFICATION`), while password rules and 2FA enforcement are database-backed runtime settings; the related env values only seed those settings. See [`identity.md`](identity.md#email-verification-and-password-reset-m1-logging--m5-delivery) for the full flow.
+- **Invitation acceptance** — an Admin/Owner invites you from `/users`; open the tokenized `/accept-invitation?token=...` link, choose a name and password, and the account, role assignment, and audit entries are committed together. No separate sign-up or sign-in step is needed. See [Users](#users-users-and-usersid).
 
 ## Roles in plain language
 
@@ -78,18 +87,28 @@ Open **App store** from the sidebar (`/modules`, requires `modules.read`; manage
 - **Install** (`modules.manage`): the plan must include `modules.store` and any key the module requires, and every dependency must already be enabled. Installation records the version and you as the installer; it does not make the module live yet.
 - **Enable** (`modules.manage`): runs the same plan and dependency checks, then makes the module's pages, sidebar entries, and permissions available immediately. Its messages join the UI with English fallback; disabling removes them again.
 - **Configure**: an installed module (enabled or disabled) has a **Settings** action at `/modules/<module-id>/settings`, which also requires the `modules.store` entitlement. The form is generated from the module's validated schema; save validates input before persisting and takes effect without a restart. Invalid values are rejected and nothing is stored.
-- **Use** module pages from the module's sidebar entries or directly at `/modules/run/<module-id>/…`. Links and pages are permission-gated; a disabled module's routes are unavailable even if you know the URL.
+- **Use** module pages from the module's sidebar/mobile-nav entries or directly at `/modules/run/<module-id>/…`. An enabled module's declared sidebar links appear in the desktop sidebar and the mobile navigation bar only while you hold the route's permission; links and pages are still permission-gated on the server, and a disabled module's routes are unavailable even if you know the URL.
 - **Disable** (`modules.manage`): removes routes and sidebar entries immediately but keeps configuration and data, so you can re-enable later. You cannot disable a module while another **enabled** module depends on it; the store names the blockers.
 - **Uninstall** (`modules.manage`): choose **Uninstall and keep data** or **Uninstall and delete data**. Keeping data preserves the module's rows and configuration and returns it to `available`, so reinstalling restores your setup. Deleting data requires typing the exact module id to confirm; it then runs the module's cleanup hook and removes that data permanently. Both options are blocked by enabled dependents and are recorded in the audit log with the option you chose.
 
 Installing, enabling, disabling, changing settings, and both uninstall paths write strict before/after audit entries with module-prefixed actions. On a Free plan the store is not eligible (`modules.store` is Pro+), and Enterprise-only modules also require `modules.premium`. A forbidden result means either the permission or the plan check failed; nothing was changed. See [`licensing.md`](licensing.md) and [`modules.md`](modules.md).
+
+## FAQ module: `/modules/run/faq`
+
+The bundled **FAQ** module is a working store module. A user with `modules.manage` installs and enables it from the App store (Pro plan; no dependencies). Once it is enabled, **Questions** and **Manage questions** appear in the desktop sidebar and mobile nav only for users who hold `faq.read` and `faq.manage` respectively; direct URLs are gated by the same permissions, and a disabled module's routes are unavailable.
+
+- **View questions** (`faq.read`, `/modules/run/faq`): published questions appear in order of position, then creation. Only as many as **Questions per page** are shown; the module setting accepts 1–50 and defaults to 10. When no questions are published, the page shows the configured **Empty state message** (default: “No questions yet.”).
+- **Manage questions** (`faq.manage`, `/modules/run/faq/manage`): add a question with text, answer, and position (0–10000), edit any entry, publish or unpublish it, or delete it after ticking the confirmation checkbox. The list shows drafts as well as published questions. Every create, edit, publication change, and delete is validated on the server, written with before/after `faq.question.*` audit entries, and reflected on the questions page immediately; invalid input or missing permission changes nothing.
+- **Configure** (`modules.manage` plus the `modules.store` entitlement, `/modules/faq/settings`): set **Questions per page** and the **Empty state message** shown on the FAQ page. The generic module settings form saves valid values immediately, and works whether the module is enabled or disabled.
+
+Uninstalling with **delete data** requires typing the module id `faq` and permanently removes its questions through the module's cleanup hook. **Keep data** preserves them so reinstalling restores your setup.
 
 ## Audit: `/audit`
 
 `/audit` (requires `audit.read`) is a live, read-only view of security and admin events. Filter by:
 
 - **User** — actor id or email.
-- **Action** — for example `auth.sign_in.failed`, `auth.password.changed`, `profile.updated`, `users.role.changed`, `users.deactivated`, `files.uploaded`, `files.deleted`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`, `modules.installed`, `modules.uninstalled`.
+- **Action** — for example `auth.sign_in.failed`, `auth.password.changed`, `profile.updated`, `users.role.changed`, `users.deactivated`, `files.uploaded`, `files.deleted`, `faq.question.created`, `faq.question.published`, `audit.exported`, `audit.purged`, `license.plan.changed`, `license.key.updated`, `modules.installed`, `modules.uninstalled`.
 - **Date range** — inclusive from/to timestamps.
 - **Module** — events attributed to a module.
 
@@ -110,6 +129,10 @@ Changing the plan writes `license.plan.changed` to the audit log; adding or clea
 ## Dashboard overview: `/`
 
 The dashboard home (`/`) is live data, not a mock. It shows the current plan, site name, default locale, audit retention, and module counts from the database and the generated registry, plus a readiness checklist. With `users.read` you also see the total user count and active sessions; with `audit.read` you see the five most recent audit entries with links to the full viewer. Sections you lack permission for are omitted entirely rather than shown as empty placeholders.
+
+## Language and appearance
+
+The default locale is set under **Settings → Localization**; an existing `NEXT_LOCALE` cookie wins over that default, so you can switch language without changing the workspace default. `en`, `fr`, and `ar` are supported, and `ar` switches the app to a right-to-left layout. Choose **Light**, **Dark**, or **System** from the theme control in the shell; the choice is applied before first paint and follows your system setting while **System** is selected.
 
 ## What "Forbidden" means
 

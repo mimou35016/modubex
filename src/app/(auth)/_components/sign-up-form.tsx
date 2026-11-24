@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { buildPasswordSchema, type PasswordRules } from "@/core/auth/schemas";
 import { authClient } from "@/lib/auth-client";
@@ -111,10 +112,9 @@ export function SignUpForm({ rules }: { rules: PasswordRules }) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="sign-up-password">{t("common.password")}</Label>
-          <Input
+          <PasswordInput
             id="sign-up-password"
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             value={password}

@@ -1,11 +1,21 @@
 import { cookies } from "next/headers";
 import type { AbstractIntlMessages } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
-import { defaultLocale, isLocale } from "@/core/i18n/locales";
+import { withEnglishFallback } from "@/core/i18n/fallback";
+import { defaultLocale, isLocale, type Locale } from "@/core/i18n/locales";
 import { mergeModuleMessages } from "@/core/modules/messages";
 import { getModuleManifests } from "@/core/modules/registry";
 import { getModuleStates } from "@/core/modules/state";
 import { getDefaultLocale } from "@/core/settings/service";
+
+async function loadCoreMessages(locale: Locale): Promise<Record<string, unknown>> {
+  try {
+    return (await import(`@/core/i18n/messages/${locale}.json`)).default as Record<string, unknown>;
+  } catch {
+    // Bootstrap fallback: no core message file yet, other trees still merge.
+    return {};
+  }
+}
 
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
@@ -23,15 +33,11 @@ export default getRequestConfig(async () => {
     }
   }
 
-  let baseMessages: Record<string, unknown> = {};
-  try {
-    baseMessages = (await import(`@/core/i18n/messages/${locale}.json`)).default as Record<
-      string,
-      unknown
-    >;
-  } catch {
-    // Bootstrap fallback: no core message file yet, module trees still merge.
-  }
+  const [englishCore, localeCore] = await Promise.all([
+    loadCoreMessages(defaultLocale),
+    loadCoreMessages(locale),
+  ]);
+  const baseMessages = withEnglishFallback(englishCore, localeCore);
 
   let enabledModuleIds: readonly string[] = [];
   if (getModuleManifests().length > 0) {

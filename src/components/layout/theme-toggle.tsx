@@ -13,7 +13,11 @@ const subscribe = () => () => {};
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const t = useTranslations("header");
-  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 
   if (!mounted) return <div className="h-8 w-[152px] rounded-md border" aria-hidden="true" />;
 

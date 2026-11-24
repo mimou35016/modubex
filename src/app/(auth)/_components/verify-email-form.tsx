@@ -63,7 +63,9 @@ export function VerifyEmailForm({ token }: { token?: string }) {
           </Alert>
         ) : null}
         {info.status === "success" ? (
-          <Alert tone="success" className="mt-5">{t("verify.success")}</Alert>
+          <Alert tone="success" className="mt-5">
+            {t("verify.success")}
+          </Alert>
         ) : null}
 
         <form action={formAction} className="mt-6">
@@ -83,8 +85,16 @@ export function VerifyEmailForm({ token }: { token?: string }) {
         <p className="text-sm leading-6 text-muted">{t("verify.intro")}</p>
       </div>
 
-      {error ? <Alert tone="error" className="mt-5">{error}</Alert> : null}
-      {sent ? <Alert tone="success" className="mt-5">{t("verify.sent")}</Alert> : null}
+      {error ? (
+        <Alert tone="error" className="mt-5">
+          {error}
+        </Alert>
+      ) : null}
+      {sent ? (
+        <Alert tone="success" className="mt-5">
+          {t("verify.sent")}
+        </Alert>
+      ) : null}
 
       {!sent ? (
         <form onSubmit={onResend} className="mt-6 space-y-4">

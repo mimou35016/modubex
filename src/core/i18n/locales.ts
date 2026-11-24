@@ -6,11 +6,14 @@ const localeSchema = z.object({
   dir: z.enum(["ltr", "rtl"]),
 });
 
-export const locales = localeSchema.array().min(1).parse([
-  { code: "en", label: "English", dir: "ltr" },
-  { code: "fr", label: "Français", dir: "ltr" },
-  { code: "ar", label: "العربية", dir: "rtl" },
-]);
+export const locales = localeSchema
+  .array()
+  .min(1)
+  .parse([
+    { code: "en", label: "English", dir: "ltr" },
+    { code: "fr", label: "Français", dir: "ltr" },
+    { code: "ar", label: "العربية", dir: "rtl" },
+  ]);
 
 export type Locale = (typeof locales)[number]["code"];
 export type LocaleConfig = (typeof locales)[number];

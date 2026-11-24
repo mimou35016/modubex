@@ -1,6 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { locales } from "@/core/i18n/locales";
+import { readinessSnapshot } from "./readiness.generated";
 
 export type ReadinessCheck = {
   id: "lockfile" | "scripts" | "ci" | "database" | "locales" | "prisma";
@@ -8,72 +7,44 @@ export type ReadinessCheck = {
   detail: string;
 };
 
-const requiredScripts = [
-  "dev",
-  "build",
-  "start",
-  "lint",
-  "typecheck",
-  "format",
-  "test",
-  "i18n:check",
-  "db:migrate",
-  "db:seed",
-];
-
-function readFile(file: string): string | null {
-  try {
-    return readFileSync(file, "utf8");
-  } catch {
-    return null;
-  }
-}
-
+/**
+ * Reports build-time repository facts from the committed snapshot plus
+ * request-time environment facts. It performs no filesystem access, so the
+ * dashboard remains accurate on ephemeral serverless filesystems.
+ */
 export function getFoundationReadiness() {
-  const root = process.cwd();
-  const packageFile = path.join(root, "package.json");
-  const rawPackage = readFile(packageFile) ?? "{}";
-  const manifest = JSON.parse(rawPackage) as {
-    version?: string;
-    scripts?: Record<string, string>;
-  };
-  const scripts = manifest.scripts ?? {};
-  const configured = requiredScripts.filter((name) => Boolean(scripts[name]));
+  const {
+    version,
+    requiredScripts,
+    scriptsConfigured,
+    lockfilePresent,
+    ciPresent,
+    prismaGenerated,
+    milestones,
+    currentMilestone,
+  } = readinessSnapshot;
 
-  const tasksFile = readFile(path.join(root, "docs", "tasks.md")) ?? "";
-  const milestones = [...tasksFile.matchAll(/^## (M\d+)/gm)].map((match) => match[1]);
-
-  const prismaGenerated = existsSync(path.join(root, "node_modules", ".prisma", "client", "index.d.ts"));
-
-  const completedMilestones = tasksFile
-    .split(/^## /m)
-    .slice(1)
-    .filter((section) => section.includes("Status: complete."))
-    .map((section) => section.match(/^(M\d+)/)?.[1] ?? "")
-    .filter(Boolean);
-  const currentMilestone =
-    completedMilestones[completedMilestones.length - 1] ?? milestones[0] ?? "M0";
-
+  const databaseReady = Boolean(process.env.DATABASE_URL);
   const checks: ReadinessCheck[] = [
     {
       id: "lockfile",
-      ready: existsSync(path.join(root, "package-lock.json")),
+      ready: lockfilePresent,
       detail: "package-lock.json",
     },
     {
       id: "scripts",
-      ready: configured.length === requiredScripts.length,
-      detail: `${configured.length}/${requiredScripts.length} required scripts present`,
+      ready: scriptsConfigured === requiredScripts.length,
+      detail: `${scriptsConfigured}/${requiredScripts.length} required scripts present`,
     },
     {
       id: "ci",
-      ready: existsSync(path.join(root, ".github", "workflows", "ci.yml")),
+      ready: ciPresent,
       detail: ".github/workflows/ci.yml",
     },
     {
       id: "database",
-      ready: Boolean(process.env.DATABASE_URL),
-      detail: process.env.DATABASE_URL ? "DATABASE_URL set" : "DATABASE_URL not set",
+      ready: databaseReady,
+      detail: databaseReady ? "DATABASE_URL set" : "DATABASE_URL not set",
     },
     {
       id: "locales",
@@ -91,7 +62,6 @@ export function getFoundationReadiness() {
     checks,
     milestones: milestones.length > 0 ? milestones : ["M0"],
     currentMilestone,
-    version: manifest.version ?? "0.0.0",
+    version,
   };
 }
-

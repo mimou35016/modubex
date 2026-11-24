@@ -1,4 +1,6 @@
+import { withEnglishFallback } from "@/core/i18n/fallback";
 import { defaultLocale, type Locale } from "@/core/i18n/locales";
+import type { ModuleDefinition } from "./manifest";
 import { getModuleDefinition, getModuleManifests } from "./registry";
 
 type MessageTree = Record<string, unknown>;
@@ -22,41 +24,41 @@ export function mergeWithCorePrecedence(base: MessageTree, overlay: MessageTree)
   return result;
 }
 
+async function loadLocaleMessages(
+  definition: ModuleDefinition,
+  locale: Locale,
+): Promise<MessageTree> {
+  const loader = definition.messages[locale];
+  if (!loader) return {};
+
+  try {
+    const loaded: unknown = await loader();
+    return isMessageTree(loaded) ? loaded : {};
+  } catch {
+    // A broken loader is equivalent to no messages for that locale.
+    return {};
+  }
+}
+
 async function loadModuleMessages(moduleId: string, locale: Locale): Promise<MessageTree> {
   const definition = getModuleDefinition(moduleId);
   if (!definition) return {};
 
   const namespace = definition.manifest.messageNamespace ?? moduleId;
-  const loader = definition.messages[locale] ?? definition.messages[defaultLocale];
-  let messages: MessageTree = {};
-  if (loader) {
-    try {
-      const loaded: unknown = await loader();
-      if (isMessageTree(loaded)) messages = loaded;
-    } catch {
-      // A missing or broken locale falls back to English below.
-      messages = {};
-    }
-  }
-  if (locale !== defaultLocale && Object.keys(messages).length === 0) {
-    const fallback = definition.messages[defaultLocale];
-    if (fallback) {
-      try {
-        const loaded: unknown = await fallback();
-        if (isMessageTree(loaded)) messages = loaded;
-      } catch {
-        messages = {};
-      }
-    }
-  }
+  const [english, localized] = await Promise.all([
+    loadLocaleMessages(definition, defaultLocale),
+    loadLocaleMessages(definition, locale),
+  ]);
+  const messages = locale === defaultLocale ? english : withEnglishFallback(english, localized);
 
   return { modules: { [namespace]: messages } };
 }
 
 /**
  * Deep-merges enabled module message trees into the core messages. Core keys
- * take precedence; a module without the requested locale uses English.
- * When `enabledModuleIds` is omitted, all registered modules are included.
+ * always take precedence; each module's locale tree falls back to that module's
+ * English messages key by key. When `enabledModuleIds` is omitted, all
+ * registered modules are included.
  */
 export async function mergeModuleMessages(
   locale: Locale,

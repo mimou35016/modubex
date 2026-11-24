@@ -7,6 +7,7 @@ import { acceptInvitationAction, type ActionState } from "@/app/actions/auth";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { acceptInvitationSchema } from "@/core/auth/schemas";
 import { readActionState } from "./form-utils";
@@ -41,8 +42,16 @@ export function AcceptInvitationForm({ token }: { token?: string }) {
         <p className="text-sm leading-6 text-muted">{t("invitation.subtitle")}</p>
       </div>
 
-      {!hasToken ? <Alert tone="error" className="mt-5">{t("invitation.invalidToken")}</Alert> : null}
-      {localError ? <Alert tone="error" className="mt-5">{localError}</Alert> : null}
+      {!hasToken ? (
+        <Alert tone="error" className="mt-5">
+          {t("invitation.invalidToken")}
+        </Alert>
+      ) : null}
+      {localError ? (
+        <Alert tone="error" className="mt-5">
+          {localError}
+        </Alert>
+      ) : null}
       {info.status === "error" ? (
         <Alert tone="error" className="mt-5">
           {info.message && /invitation|expired/i.test(info.message)
@@ -53,7 +62,9 @@ export function AcceptInvitationForm({ token }: { token?: string }) {
         </Alert>
       ) : null}
       {info.status === "success" ? (
-        <Alert tone="success" className="mt-5">{t("invitation.success")}</Alert>
+        <Alert tone="success" className="mt-5">
+          {t("invitation.success")}
+        </Alert>
       ) : null}
 
       {hasToken ? (
@@ -73,10 +84,9 @@ export function AcceptInvitationForm({ token }: { token?: string }) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="accept-password">{t("common.password")}</Label>
-            <Input
+            <PasswordInput
               id="accept-password"
               name="password"
-              type="password"
               autoComplete="new-password"
               required
               value={password}
